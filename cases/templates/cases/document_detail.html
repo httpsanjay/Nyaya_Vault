@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>{{ document.name }} | NyayaVault</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+        }
+
+
+        /* ================= NAVBAR ================= */
+
+        .navbar {
+            height: 65px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 30px;
+        }
+
+        .brand {
+            font-size: 21px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .brand span {
+            color: #2563eb;
+        }
+
+        .user {
+            font-size: 14px;
+            color: #374151;
+        }
+
+
+        /* ================= MAIN ================= */
+
+        .main {
+            max-width: 1200px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+
+        /* ================= BACK ================= */
+
+        .back {
+            display: inline-block;
+            margin-bottom: 20px;
+
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back:hover {
+            text-decoration: underline;
+        }
+
+
+        /* ================= HEADER ================= */
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            color: #111827;
+        }
+
+        .subtitle {
+            margin-top: 7px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .case-link {
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        .case-link a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+
+        /* ================= BUTTONS ================= */
+
+        .btn {
+            display: inline-block;
+
+            padding: 9px 13px;
+
+            border-radius: 7px;
+
+            text-decoration: none;
+
+            font-size: 12px;
+            font-weight: 600;
+
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-success {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #15803d;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-sign {
+            background: #7c3aed;
+            color: white;
+        }
+
+        .btn-sign:hover {
+            background: #6d28d9;
+        }
+
+        .btn-small {
+            padding: 7px 10px;
+            font-size: 11px;
+        }
+
+
+        /* ================= CARD ================= */
+
+        .card {
+            background: white;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 10px;
+
+            padding: 25px;
+
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: 600;
+
+            color: #111827;
+
+            margin-bottom: 20px;
+        }
+
+
+        /* ================= DOCUMENT INFO ================= */
+
+        .info-grid {
+            display: grid;
+
+            grid-template-columns: repeat(2, 1fr);
+
+            gap: 20px;
+        }
+
+        .info-item {
+            padding: 14px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 7px;
+        }
+
+        .label {
+            font-size: 11px;
+
+            color: #6b7280;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.4px;
+
+            margin-bottom: 6px;
+        }
+
+        .value {
+            font-size: 14px;
+
+            font-weight: 600;
+
+            color: #111827;
+
+            word-break: break-word;
+        }
+
+
+        /* ================= DESCRIPTION ================= */
+
+        .description {
+            margin-top: 20px;
+
+            padding: 15px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 7px;
+        }
+
+        .description-text {
+            color: #4b5563;
+
+            font-size: 14px;
+
+            line-height: 1.6;
+
+            white-space: pre-line;
+        }
+
+
+        /* ================= SECURITY ================= */
+
+        .security {
+            margin-top: 20px;
+
+            padding: 15px;
+
+            background: #eff6ff;
+
+            border: 1px solid #bfdbfe;
+
+            border-radius: 8px;
+
+            color: #1e40af;
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+        .security strong {
+            color: #1e3a8a;
+        }
+
+
+        /* ================= VERSION TABLE ================= */
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            min-width: 1100px;
+        }
+
+        th {
+            background: #f9fafb;
+
+            text-align: left;
+
+            padding: 13px;
+
+            border-bottom: 1px solid #e5e7eb;
+
+            color: #6b7280;
+
+            font-size: 11px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.3px;
+
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 15px 13px;
+
+            border-bottom: 1px solid #e5e7eb;
+
+            font-size: 13px;
+
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+
+        /* ================= VERSION ================= */
+
+        .version {
+            display: inline-block;
+
+            padding: 5px 9px;
+
+            background: #dbeafe;
+
+            color: #1e40af;
+
+            border-radius: 5px;
+
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+
+        /* ================= FILE ================= */
+
+        .file-name {
+            font-weight: 600;
+
+            color: #374151;
+
+            max-width: 200px;
+
+            word-break: break-word;
+        }
+
+
+        /* ================= HASH ================= */
+
+        .hash {
+            max-width: 220px;
+
+            word-break: break-all;
+
+            font-family: monospace;
+
+            font-size: 10px;
+
+            color: #6b7280;
+
+            background: #f9fafb;
+
+            padding: 7px;
+
+            border-radius: 5px;
+
+            border: 1px solid #e5e7eb;
+        }
+
+
+        /* ================= STATUS ================= */
+
+        .status {
+            display: inline-block;
+
+            padding: 5px 9px;
+
+            border-radius: 5px;
+
+            font-size: 11px;
+
+            font-weight: 700;
+
+            white-space: nowrap;
+        }
+
+        .status-draft {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-approved {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-signed {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+
+        /* ================= ACTIONS ================= */
+
+        .actions {
+            display: flex;
+
+            flex-wrap: wrap;
+
+            gap: 6px;
+
+            align-items: center;
+        }
+
+        .inline-form {
+            display: inline;
+        }
+
+
+        /* ================= LINKS ================= */
+
+        .verify-link {
+            color: #166534;
+
+            text-decoration: none;
+
+            font-weight: 600;
+
+            font-size: 12px;
+
+            white-space: nowrap;
+        }
+
+        .verify-link:hover {
+            text-decoration: underline;
+        }
+
+        .download {
+            color: #2563eb;
+
+            text-decoration: none;
+
+            font-weight: 600;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+        }
+
+        .download:hover {
+            text-decoration: underline;
+        }
+
+        .muted {
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+
+        /* ================= REJECTION ================= */
+
+        .rejection {
+            margin-top: 8px;
+
+            color: #991b1b;
+
+            font-size: 11px;
+
+            max-width: 200px;
+
+            line-height: 1.5;
+        }
+
+
+        /* ================= EMPTY ================= */
+
+        .empty {
+            text-align: center;
+
+            padding: 40px 20px;
+
+            color: #6b7280;
+
+            font-size: 14px;
+        }
+
+
+        /* ================= EXTRACTED TEXT ================= */
+
+        .extracted-text {
+            margin-top: 15px;
+
+            padding: 18px;
+
+            background: #f8fafc;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 8px;
+
+            font-size: 13px;
+
+            line-height: 1.7;
+
+            color: #374151;
+
+            white-space: pre-wrap;
+
+            max-height: 400px;
+
+            overflow-y: auto;
+        }
+
+        .version-info {
+            font-size: 12px;
+
+            color: #6b7280;
+
+            margin-bottom: 10px;
+        }
+
+
+        /* ================= FOOTER ================= */
+
+        .footer-info {
+            margin-top: 20px;
+
+            padding: 15px;
+
+            background: #f9fafb;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 8px;
+
+            font-size: 12px;
+
+            color: #6b7280;
+
+            line-height: 1.6;
+        }
+
+        .footer-info strong {
+            color: #374151;
+        }
+
+
+        /* ================= RESPONSIVE ================= */
+
+        @media (max-width: 700px) {
+
+            .navbar {
+                padding: 0 15px;
+            }
+
+            .main {
+                margin-top: 25px;
+            }
+
+            .header {
+                flex-direction: column;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .navbar { padding: 0 16px; }
+            .main { margin-top: 24px; padding: 0 14px; }
+            .user { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .header > div:last-child { width: 100%; }
+            .header > div:last-child .btn { width: 100%; text-align: center; }
+            .actions { align-items: flex-start; }
+            .actions .inline-form { width: 100%; }
+            .actions .btn { max-width: 100%; }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ================= NAVBAR ================= -->
+
+<header class="navbar">
+
+    <div class="brand">
+
+        <a
+            href="{% url 'dashboard' %}"
+            style="text-decoration:none; color:inherit;"
+        >
+            Nyaya<span>Vault</span>
+        </a>
+
+    </div>
+
+
+    <div class="user">
+
+        {{ request.user.get_full_name|default:request.user.username }}
+
+    </div>
+
+</header>
+
+
+
+<!-- ================= MAIN ================= -->
+
+<main class="main">
+
+
+    <!-- BACK -->
+
+    <a
+        href="{% url 'case_detail' document.case.pk %}"
+        class="back"
+    >
+        ← Back to Case
+    </a>
+
+
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="header">
+
+        <div>
+
+            <h1>
+                {{ document.name }}
+            </h1>
+
+
+            <div class="subtitle">
+
+                {{ document.get_document_type_display }}
+
+            </div>
+
+
+            <div class="case-link">
+
+                Case:
+
+                <a
+                    href="{% url 'case_detail' document.case.pk %}"
+                >
+                    {{ document.case.case_number }}
+                </a>
+
+                —
+
+                {{ document.case.title }}
+
+            </div>
+
+        </div>
+
+
+        <div>
+
+            {% if document.case.assigned_to == request.user or document.case.created_by == request.user %}
+
+                <a
+                    href="{% url 'document_upload_version' document.pk %}"
+                    class="btn btn-primary"
+                >
+                    + Upload New Version
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================= DOCUMENT INFORMATION ================= -->
+
+    <div class="card">
+
+        <div class="card-title">
+            Document Information
+        </div>
+
+
+        <div class="info-grid">
+
+
+            <div class="info-item">
+
+                <div class="label">
+                    Document Name
+                </div>
+
+                <div class="value">
+                    {{ document.name }}
+                </div>
+
+            </div>
+
+
+            <div class="info-item">
+
+                <div class="label">
+                    Document Type
+                </div>
+
+                <div class="value">
+                    {{ document.get_document_type_display }}
+                </div>
+
+            </div>
+
+
+            <div class="info-item">
+
+                <div class="label">
+                    Created By
+                </div>
+
+                <div class="value">
+
+                    {% if document.uploaded_by %}
+                        {{ document.uploaded_by.get_full_name|default:document.uploaded_by.username }}
+                    {% else %}
+                        Unknown
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="info-item">
+
+                <div class="label">
+                    Created On
+                </div>
+
+                <div class="value">
+                    {{ document.created_at|date:"d M Y, h:i A" }}
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        {% if document.description %}
+
+            <div class="description">
+
+                <div class="label">
+                    Description
+                </div>
+
+                <div class="description-text">
+                    {{ document.description }}
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+
+        <div class="security">
+
+            <strong>
+                🔐 Document Integrity & Digital Verification
+            </strong>
+
+            <br>
+
+            Every uploaded version receives a SHA-256
+            cryptographic hash.
+
+            Documents submitted by an IO must be reviewed
+            and approved by the SHO before they can be
+            digitally signed.
+
+            Once signed, the signature can be independently
+            verified to detect tampering.
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================= VERSION HISTORY ================= -->
+
+    <div class="card">
+
+        <div class="card-title">
+            Version History
+        </div>
+
+
+        {% if versions %}
+
+
+            <div class="table-container">
+
+                <table>
+
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Version
+                            </th>
+
+                            <th>
+                                File
+                            </th>
+
+                            <th>
+                                Uploaded By
+                            </th>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                SHA-256 Hash
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Action
+                            </th>
+
+                            <th>
+                                Download
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+
+                        {% for version in versions %}
+
+
+                            <tr>
+
+
+                                <!-- ================= VERSION ================= -->
+
+                                <td>
+
+                                    <span class="version">
+
+                                        v{{ version.version_number }}
+
+                                    </span>
+
+                                </td>
+
+
+
+                                <!-- ================= FILE ================= -->
+
+                                <td>
+
+                                    <div class="file-name">
+
+                                        {{ version.file.name|cut:"case_documents/" }}
+
+                                    </div>
+
+                                </td>
+
+
+
+                                <!-- ================= UPLOADER ================= -->
+
+                                <td>
+
+                                    {% if version.uploaded_by %}
+
+                                        {{ version.uploaded_by.get_full_name|default:version.uploaded_by.username }}
+
+                                    {% else %}
+
+                                        Unknown
+
+                                    {% endif %}
+
+                                </td>
+
+
+
+                                <!-- ================= DATE ================= -->
+
+                                <td>
+
+                                    {{ version.created_at|date:"d M Y" }}
+
+                                    <br>
+
+                                    <span
+                                        style="
+                                            color:#9ca3af;
+                                            font-size:11px;
+                                        "
+                                    >
+
+                                        {{ version.created_at|date:"h:i A" }}
+
+                                    </span>
+
+                                </td>
+
+
+
+                                <!-- ================= HASH ================= -->
+
+                                <td>
+
+                                    {% if version.file_hash %}
+
+                                        <div class="hash">
+
+                                            {{ version.file_hash }}
+
+                                        </div>
+
+                                    {% else %}
+
+                                        <span class="muted">
+                                            Not available
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+
+                                <!-- ================= STATUS ================= -->
+
+                                <td>
+
+
+                                    {% if version.status == "DRAFT" %}
+
+                                        <span class="status status-draft">
+                                            Draft
+                                        </span>
+
+
+                                    {% elif version.status == "PENDING_REVIEW" %}
+
+                                        <span class="status status-pending">
+                                            Pending Review
+                                        </span>
+
+
+                                    {% elif version.status == "APPROVED" %}
+
+                                        <span class="status status-approved">
+                                            Approved
+                                        </span>
+
+
+                                    {% elif version.status == "SIGNED" %}
+
+                                        <span class="status status-signed">
+                                            ✓ Digitally Signed
+                                        </span>
+
+
+                                    {% elif version.status == "REJECTED" %}
+
+                                        <span class="status status-rejected">
+                                            Rejected
+                                        </span>
+
+
+                                    {% else %}
+
+                                        <span class="status status-draft">
+                                            {{ version.status }}
+                                        </span>
+
+                                    {% endif %}
+
+
+                                </td>
+
+
+
+                                <!-- ================= ACTION ================= -->
+
+                                <td>
+
+                                    <div class="actions">
+
+
+                                        <!-- ================= IO ================= -->
+
+                                        {% if request.user.role == "IO" %}
+
+
+                                            {% if version.status == "DRAFT" and version.uploaded_by == request.user %}
+
+                                                <form
+                                                    method="POST"
+                                                    action="{% url 'submit_document_for_review' version.pk %}"
+                                                    class="inline-form"
+                                                >
+
+                                                    {% csrf_token %}
+
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-primary btn-small"
+                                                    >
+                                                        Submit for Review
+                                                    </button>
+
+                                                </form>
+
+
+                                            {% elif version.status == "PENDING_REVIEW" %}
+
+                                                <span class="muted">
+                                                    Waiting for SHO review
+                                                </span>
+
+
+                                            {% elif version.status == "APPROVED" %}
+
+                                                <span
+                                                    style="
+                                                        color:#166534;
+                                                        font-size:12px;
+                                                        font-weight:600;
+                                                    "
+                                                >
+                                                    ✓ Approved by SHO
+                                                </span>
+
+
+                                            {% elif version.status == "SIGNED" %}
+
+                                                <a
+                                                    href="{% url 'verify_document_version' version.pk %}"
+                                                    class="verify-link"
+                                                >
+                                                    ✓ Verify Signature
+                                                </a>
+
+
+                                            {% elif version.status == "REJECTED" %}
+
+                                                <span
+                                                    style="
+                                                        color:#991b1b;
+                                                        font-size:12px;
+                                                        font-weight:600;
+                                                    "
+                                                >
+                                                    ✕ Rejected
+                                                </span>
+
+                                            {% endif %}
+
+
+
+                                        <!-- ================= SHO ================= -->
+
+                                        {% elif request.user.role == "SHO" %}
+
+
+                                            {% if version.status == "PENDING_REVIEW" %}
+
+
+                                                <form
+                                                    method="POST"
+                                                    action="{% url 'approve_document' version.pk %}"
+                                                    class="inline-form"
+                                                >
+
+                                                    {% csrf_token %}
+
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-success btn-small"
+                                                    >
+                                                        Approve
+                                                    </button>
+
+                                                </form>
+
+
+                                                <form
+                                                    method="POST"
+                                                    action="{% url 'reject_document' version.pk %}"
+                                                    class="inline-form"
+                                                >
+
+                                                    {% csrf_token %}
+
+                                                    <input
+                                                        type="hidden"
+                                                        name="rejection_reason"
+                                                        value="Document requires correction."
+                                                    >
+
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-danger btn-small"
+                                                    >
+                                                        Reject
+                                                    </button>
+
+                                                </form>
+
+
+                                            {% elif version.status == "APPROVED" %}
+
+
+                                                <form
+                                                    method="POST"
+                                                    action="{% url 'sign_document_version' version.pk %}"
+                                                    class="inline-form"
+                                                >
+
+                                                    {% csrf_token %}
+
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-sign btn-small"
+                                                    >
+                                                        Digitally Sign
+                                                    </button>
+
+                                                </form>
+
+
+                                            {% elif version.status == "SIGNED" %}
+
+                                                <a
+                                                    href="{% url 'verify_document_version' version.pk %}"
+                                                    class="verify-link"
+                                                >
+                                                    ✓ Verify Signature
+                                                </a>
+
+
+                                            {% elif version.status == "DRAFT" %}
+
+                                                <span class="muted">
+                                                    Waiting for IO submission
+                                                </span>
+
+
+                                            {% elif version.status == "REJECTED" %}
+
+                                                <span
+                                                    style="
+                                                        color:#991b1b;
+                                                        font-size:12px;
+                                                        font-weight:600;
+                                                    "
+                                                >
+                                                    Rejected
+                                                </span>
+
+                                            {% endif %}
+
+
+
+                                        <!-- ================= FORENSIC ================= -->
+
+                                        {% elif request.user.role == "FORENSIC_OFFICER" %}
+
+
+                                            {% if version.status == "SIGNED" %}
+
+                                                <a
+                                                    href="{% url 'verify_document_version' version.pk %}"
+                                                    class="verify-link"
+                                                >
+                                                    ✓ Verify Signature
+                                                </a>
+
+                                            {% else %}
+
+                                                <span class="muted">
+                                                    View only
+                                                </span>
+
+                                            {% endif %}
+
+
+
+                                        <!-- ================= OTHER ================= -->
+
+                                        {% else %}
+
+
+                                            {% if version.status == "SIGNED" %}
+
+                                                <a
+                                                    href="{% url 'verify_document_version' version.pk %}"
+                                                    class="verify-link"
+                                                >
+                                                    ✓ Verify Signature
+                                                </a>
+
+                                            {% else %}
+
+                                                <span class="muted">
+                                                    View only
+                                                </span>
+
+                                            {% endif %}
+
+
+                                        {% endif %}
+
+
+
+                                        <!-- ================================================= -->
+                                        <!-- VERSION DELETE                                  -->
+                                        <!-- ================================================= -->
+
+                                        {% if version.status != "APPROVED" and version.status != "SIGNED" %}
+
+                                            {% if version.uploaded_by == request.user or request.user.role == "SHO" %}
+
+                                                <form
+                                                    method="POST"
+                                                    action="{% url 'document_version_delete' version.pk %}"
+                                                    class="inline-form"
+                                                    onsubmit="return confirm('Are you sure you want to delete version v{{ version.version_number }}? This action cannot be undone.');"
+                                                >
+
+                                                    {% csrf_token %}
+
+                                                    <button
+                                                        type="submit"
+                                                        class="btn btn-danger btn-small"
+                                                    >
+                                                        Delete
+                                                    </button>
+
+                                                </form>
+
+                                            {% endif %}
+
+                                        {% else %}
+
+                                            <span
+                                                class="muted"
+                                                title="Approved and digitally signed versions are locked."
+                                            >
+                                                🔒 Locked
+                                            </span>
+
+                                        {% endif %}
+
+
+                                    </div>
+
+
+
+                                    <!-- ================= REJECTION REASON ================= -->
+
+                                    {% if version.status == "REJECTED" and version.rejection_reason %}
+
+                                        <div class="rejection">
+
+                                            <strong>
+                                                Reason:
+                                            </strong>
+
+                                            {{ version.rejection_reason }}
+
+                                        </div>
+
+                                    {% endif %}
+
+
+                                </td>
+
+
+
+                                <!-- ================= DOWNLOAD ================= -->
+
+                                <td>
+
+                                    {% if version.file %}
+
+                                        <a
+                                            href="{{ version.file.url }}"
+                                            class="download"
+                                            target="_blank"
+                                        >
+                                            View / Download
+                                        </a>
+
+                                    {% else %}
+
+                                        <span class="muted">
+                                            No file
+                                        </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                            </tr>
+
+
+                        {% endfor %}
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+        {% else %}
+
+
+            <div class="empty">
+
+                <p>
+                    No file versions have been uploaded yet.
+                </p>
+
+
+                {% if document.case.assigned_to == request.user or document.case.created_by == request.user %}
+
+                    <br>
+
+                    <a
+                        href="{% url 'document_upload_version' document.pk %}"
+                        class="btn btn-primary"
+                    >
+                        Upload First Version
+                    </a>
+
+                {% endif %}
+
+            </div>
+
+
+        {% endif %}
+
+    </div>
+
+
+
+    <!-- ================= EXTRACTED TEXT ================= -->
+
+    <div class="card">
+
+        <div class="card-title">
+            Extracted Text
+        </div>
+
+
+        {% if versions %}
+
+            {% with latest_version=versions.first %}
+
+                <div class="version-info">
+
+                    Showing extracted text from
+                    <strong>
+                        Version {{ latest_version.version_number }}
+                    </strong>
+
+                </div>
+
+
+                {% if latest_version.extracted_text %}
+
+                    <div class="extracted-text">
+
+                        {{ latest_version.extracted_text }}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="empty">
+
+                        No text could be extracted from
+                        this document version.
+
+                    </div>
+
+                {% endif %}
+
+            {% endwith %}
+
+        {% else %}
+
+            <div class="empty">
+
+                No document versions available.
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+
+    <!-- ================= INFORMATION ================= -->
+
+    <div class="footer-info">
+
+        <strong>
+            Version control:
+        </strong>
+
+        Existing versions are never replaced.
+
+        Each upload is stored as a separate version
+        with its own uploader, timestamp and SHA-256 hash.
+
+        <br><br>
+
+        <strong>
+            Approval workflow:
+        </strong>
+
+        IO uploads → IO submits → SHO reviews →
+        SHO approves → SHO digitally signs →
+        signature can be verified.
+
+        <br><br>
+
+        <strong>
+            Version deletion:
+        </strong>
+
+        Draft, pending-review and rejected versions
+        may be deleted according to permissions.
+
+        Approved and digitally signed versions are
+        permanently locked to preserve document integrity.
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

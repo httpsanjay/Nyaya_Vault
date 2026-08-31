@@ -1,0 +1,275 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Create Case | NyayaVault</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+        }
+
+        .navbar {
+            height: 65px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 30px;
+        }
+
+        .brand {
+            font-size: 21px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .brand span {
+            color: #2563eb;
+        }
+
+        .user {
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .main {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            color: #111827;
+        }
+
+        .header p {
+            margin-top: 6px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 7px;
+            color: #374151;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 11px 12px;
+
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .help {
+            margin-top: 5px;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .error {
+            margin-top: 5px;
+            color: #dc2626;
+            font-size: 12px;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 11px 18px;
+            border-radius: 7px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn:focus,
+        input:focus,
+        select:focus,
+        textarea:focus,
+        a:focus {
+            outline: 3px solid #bfdbfe;
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .navbar { padding: 0 16px; }
+            .main { margin: 24px auto; padding: 0 14px; }
+            .card { padding: 20px; }
+            .actions { flex-direction: column-reverse; gap: 10px; align-items: stretch; }
+            .btn { width: 100%; text-align: center; }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="navbar">
+
+    <div class="brand">
+        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+            
+            Nyaya<span>Vault</span>
+        </a>
+    </div>
+
+    <div class="user">
+        {{ request.user.get_full_name|default:request.user.username }}
+    </div>
+
+</header>
+
+
+<main class="main">
+
+    <div class="header">
+
+        <h1>Create New Case</h1>
+
+        <p>
+            Create a new case record in NyayaVault.
+        </p>
+
+    </div>
+
+
+    <div class="card">
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+
+            {% for field in form %}
+
+                <div class="form-group">
+
+                    {{ field.label_tag }}
+
+                    {{ field }}
+
+                    {% if field.help_text %}
+                        <div class="help">
+                            {{ field.help_text }}
+                        </div>
+                    {% endif %}
+
+                    {% for error in field.errors %}
+                        <div class="error">
+                            {{ error }}
+                        </div>
+                    {% endfor %}
+
+                </div>
+
+            {% endfor %}
+
+
+            <div class="actions">
+
+                <a
+                    href="{% url 'case_list' %}"
+                    class="btn btn-secondary"
+                >
+                    Cancel
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="btn btn-primary"
+                >
+                    Create Case
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</main>
+
+
+</body>
+
+</html>

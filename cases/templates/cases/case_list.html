@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Cases | NyayaVault</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        body {
+
+            font-family: Arial, Helvetica, sans-serif;
+
+            background: #f5f7fa;
+
+            color: #1f2937;
+
+        }
+
+
+        /* =====================================================
+           LAYOUT
+        ===================================================== */
+
+        .layout {
+
+            display: flex;
+
+            min-height: 100vh;
+
+        }
+
+
+        /* =====================================================
+           SIDEBAR
+        ===================================================== */
+
+        .sidebar {
+
+            width: 240px;
+
+            background: #111827;
+
+            color: white;
+
+            position: fixed;
+
+            left: 0;
+
+            top: 0;
+
+            bottom: 0;
+
+            display: flex;
+
+            flex-direction: column;
+
+            z-index: 1000;
+
+        }
+
+
+        .sidebar-brand {
+
+            height: 65px;
+
+            display: flex;
+
+            align-items: center;
+
+            padding: 0 24px;
+
+            border-bottom: 1px solid #374151;
+
+            font-size: 21px;
+
+            font-weight: 700;
+
+        }
+
+
+        .sidebar-brand span {
+
+            color: #60a5fa;
+
+        }
+
+
+        .nav {
+
+            padding: 20px 12px;
+
+        }
+
+
+        .nav-title {
+
+            font-size: 10px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+
+            color: #9ca3af;
+
+            padding: 0 12px;
+
+            margin-bottom: 10px;
+
+        }
+
+
+        .nav-link {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 11px;
+
+            padding: 11px 13px;
+
+            margin-bottom: 5px;
+
+            border-radius: 7px;
+
+            color: #d1d5db;
+
+            text-decoration: none;
+
+            font-size: 14px;
+
+            transition: 0.2s;
+
+        }
+
+
+        .nav-link:hover {
+
+            background: #1f2937;
+
+            color: white;
+
+        }
+
+
+        .nav-link.active {
+
+            background: #2563eb;
+
+            color: white;
+
+        }
+
+
+        .nav-icon {
+
+            width: 20px;
+
+            text-align: center;
+
+            font-size: 15px;
+
+        }
+
+
+        .sidebar-bottom {
+
+            margin-top: auto;
+
+            padding: 15px 12px;
+
+            border-top: 1px solid #374151;
+
+        }
+
+
+        .user-box {
+
+            padding: 10px 12px;
+
+            color: #d1d5db;
+
+            font-size: 12px;
+
+        }
+
+
+        .user-role {
+
+            color: #9ca3af;
+
+            margin-top: 3px;
+
+            font-size: 11px;
+
+        }
+
+
+        /* =====================================================
+           MAIN AREA
+        ===================================================== */
+
+        .content {
+
+            margin-left: 240px;
+
+            width: calc(100% - 240px);
+
+            min-height: 100vh;
+
+        }
+
+
+        /* =====================================================
+           TOP BAR
+        ===================================================== */
+
+        .navbar {
+
+            height: 65px;
+
+            background: white;
+
+            border-bottom: 1px solid #e5e7eb;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 30px;
+
+        }
+
+
+        .navbar-title {
+
+            font-size: 15px;
+
+            font-weight: 600;
+
+            color: #374151;
+
+        }
+
+
+        .user {
+
+            font-size: 14px;
+
+            color: #374151;
+
+        }
+
+
+        /* =====================================================
+           MAIN
+        ===================================================== */
+
+        .main {
+
+            max-width: 1350px;
+
+            margin: 35px auto;
+
+            padding: 0 25px;
+
+        }
+
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .header {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 25px;
+
+            gap: 20px;
+
+        }
+
+
+        .header h1 {
+
+            font-size: 26px;
+
+            color: #111827;
+
+        }
+
+
+        .header p {
+
+            margin-top: 5px;
+
+            color: #6b7280;
+
+            font-size: 14px;
+
+        }
+
+
+        /* =====================================================
+           BUTTON
+        ===================================================== */
+
+        .btn {
+
+            display: inline-block;
+
+            padding: 11px 17px;
+
+            border-radius: 7px;
+
+            text-decoration: none;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            border: none;
+
+            cursor: pointer;
+
+        }
+
+
+        .btn-primary {
+
+            background: #2563eb;
+
+            color: white;
+
+        }
+
+
+        .btn-primary:hover {
+
+            background: #1d4ed8;
+
+        }
+
+
+        /* =====================================================
+           CARD
+        ===================================================== */
+
+        .card {
+
+            background: white;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+
+        }
+
+
+        /* =====================================================
+           SEARCH
+        ===================================================== */
+
+        .search {
+
+            padding: 18px;
+
+            border-bottom: 1px solid #e5e7eb;
+
+        }
+
+
+        .search form {
+
+            display: flex;
+
+            gap: 10px;
+
+            flex-wrap: wrap;
+
+        }
+
+
+        .search input,
+        .search select {
+
+            padding: 11px;
+
+            border: 1px solid #d1d5db;
+
+            border-radius: 6px;
+
+            font-size: 14px;
+
+            background: white;
+
+            color: #374151;
+
+        }
+
+
+        .search input[name="q"] {
+
+            flex: 1;
+
+            min-width: 220px;
+
+        }
+
+
+        .search input[name="assigned_officer"] {
+
+            width: 160px;
+
+        }
+
+
+        .search select {
+
+            min-width: 140px;
+
+        }
+
+
+        .search button {
+
+            padding: 11px 20px;
+
+            border: none;
+
+            border-radius: 6px;
+
+            background: #111827;
+
+            color: white;
+
+            cursor: pointer;
+
+            font-weight: 600;
+
+        }
+
+
+        .search button:hover {
+
+            background: #374151;
+
+        }
+
+
+        .clear {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            padding: 0 10px;
+
+            color: #6b7280;
+
+            text-decoration: none;
+
+            font-size: 13px;
+
+        }
+
+
+        .clear:hover {
+
+            color: #111827;
+
+            text-decoration: underline;
+
+        }
+
+
+        /* =====================================================
+           TABLE
+        ===================================================== */
+
+        .table-container {
+
+            overflow-x: auto;
+
+        }
+
+
+        table {
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+            min-width: 950px;
+
+        }
+
+
+        th {
+
+            background: #f9fafb;
+
+            text-align: left;
+
+            padding: 14px;
+
+            font-size: 11px;
+
+            color: #6b7280;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.4px;
+
+            white-space: nowrap;
+
+        }
+
+
+        td {
+
+            padding: 16px 14px;
+
+            border-top: 1px solid #e5e7eb;
+
+            font-size: 14px;
+
+            vertical-align: middle;
+
+        }
+
+
+        tbody tr:hover {
+
+            background: #f9fafb;
+
+        }
+
+
+        /* =====================================================
+           CASE NUMBER
+        ===================================================== */
+
+        .case-number {
+
+            color: #2563eb;
+
+            font-weight: 700;
+
+            text-decoration: none;
+
+        }
+
+
+        .case-number:hover {
+
+            text-decoration: underline;
+
+        }
+
+
+        /* =====================================================
+           STATUS
+        ===================================================== */
+
+        .status {
+
+            display: inline-block;
+
+            padding: 5px 9px;
+
+            border-radius: 5px;
+
+            font-size: 11px;
+
+            font-weight: 600;
+
+        }
+
+
+        .status-open {
+
+            background: #dcfce7;
+
+            color: #166534;
+
+        }
+
+
+        .status-pending {
+
+            background: #fef3c7;
+
+            color: #92400e;
+
+        }
+
+
+        .status-closed {
+
+            background: #e5e7eb;
+
+            color: #374151;
+
+        }
+
+
+        /* =====================================================
+           OFFICER
+        ===================================================== */
+
+        .officer {
+
+            font-size: 13px;
+
+            color: #374151;
+
+        }
+
+
+        .unassigned {
+
+            color: #9ca3af;
+
+            font-size: 13px;
+
+        }
+
+
+        /* =====================================================
+           VIEW
+        ===================================================== */
+
+        .view {
+
+            color: #2563eb;
+
+            text-decoration: none;
+
+            font-weight: 600;
+
+            font-size: 13px;
+
+            white-space: nowrap;
+
+        }
+
+
+        .view:hover {
+
+            text-decoration: underline;
+
+        }
+
+
+        /* =====================================================
+           EMPTY
+        ===================================================== */
+
+        .empty {
+
+            text-align: center;
+
+            padding: 60px 20px;
+
+            color: #6b7280;
+
+        }
+
+
+        .empty h3 {
+
+            color: #374151;
+
+            font-size: 18px;
+
+        }
+
+
+        .empty p {
+
+            margin-top: 8px;
+
+            font-size: 14px;
+
+        }
+
+
+        /* =====================================================
+           ROLE INFO
+        ===================================================== */
+
+        .access-info {
+
+            margin-top: 20px;
+
+            padding: 14px 16px;
+
+            background: #eff6ff;
+
+            border: 1px solid #bfdbfe;
+
+            border-radius: 8px;
+
+            color: #1e40af;
+
+            font-size: 13px;
+
+        }
+
+        .nav-link:focus,
+        .btn:focus,
+        .search input:focus,
+        .search select:focus,
+        .search button:focus,
+        .clear:focus,
+        .view:focus,
+        .case-number:focus {
+            outline: 3px solid #93c5fd;
+            outline-offset: 2px;
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 850px) {
+
+            .sidebar {
+
+                width: 65px;
+
+            }
+
+
+            .sidebar-brand {
+
+                padding: 0;
+
+                justify-content: center;
+
+                font-size: 0;
+
+            }
+
+
+            .sidebar-brand span {
+
+                font-size: 0;
+
+            }
+
+
+            .nav-title {
+
+                display: none;
+
+            }
+
+
+            .nav-link {
+
+                justify-content: center;
+
+                padding: 12px;
+
+            }
+
+
+            .nav-link span:not(.nav-icon) {
+
+                display: none;
+
+            }
+
+
+            .user-box {
+
+                display: none;
+
+            }
+
+
+            .content {
+
+                margin-left: 65px;
+
+                width: calc(100% - 65px);
+
+            }
+
+
+            .main {
+
+                padding: 0 15px;
+
+            }
+
+            .navbar { padding: 0 16px; }
+            .main { margin-top: 24px; }
+
+
+            .header {
+
+                align-items: flex-start;
+
+                flex-direction: column;
+
+            }
+
+
+        }
+
+
+        @media (max-width: 600px) {
+
+            .navbar {
+
+                padding: 0 15px;
+
+            }
+
+
+            .navbar-title {
+
+                display: none;
+
+            }
+
+
+            .search input,
+            .search select,
+            .search button {
+
+                width: 100%;
+
+            }
+
+
+            .search input[name="q"] {
+
+                min-width: 100%;
+
+            }
+
+
+            .clear {
+
+                padding: 8px 0;
+
+            }
+
+            .header h1 { font-size: 23px; }
+            .header .btn { width: 100%; text-align: center; }
+            .access-info { margin-top: 14px; }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="layout">
+
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+
+        <div class="sidebar-brand">
+
+            Nyaya<span>Vault</span>
+
+        </div>
+
+
+        <nav class="nav">
+
+
+            <div class="nav-title">
+
+                Main Menu
+
+            </div>
+
+
+            <a
+                href="{% url 'dashboard' %}"
+                class="nav-link"
+            >
+
+                <span class="nav-icon">⌂</span>
+
+                <span>Dashboard</span>
+
+            </a>
+
+
+            <a
+                href="{% url 'case_list' %}"
+                class="nav-link active"
+            >
+
+                <span class="nav-icon">▣</span>
+
+                <span>Cases</span>
+
+            </a>
+
+
+            {% if request.user.role == "IO" %}
+
+                <a
+                    href="{% url 'case_create' %}"
+                    class="nav-link"
+                >
+
+                    <span class="nav-icon">＋</span>
+
+                    <span>New Case</span>
+
+                </a>
+
+            {% endif %}
+
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="user-box">
+
+                <div>
+
+                    {{ request.user.get_full_name|default:request.user.username }}
+
+                </div>
+
+
+                <div class="user-role">
+
+                    {{ request.user.role }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </aside>
+
+
+    <!-- =====================================================
+         CONTENT
+    ====================================================== -->
+
+    <div class="content">
+
+
+        <!-- =================================================
+             NAVBAR
+        ================================================== -->
+
+        <header class="navbar">
+
+
+            <div class="navbar-title">
+
+                Case Management
+
+            </div>
+
+
+            <div class="user">
+
+                {{ request.user.get_full_name|default:request.user.username }}
+
+            </div>
+
+
+        </header>
+
+
+        <!-- =================================================
+             MAIN
+        ================================================== -->
+
+        <main class="main">
+
+
+            <!-- =================================================
+                 HEADER
+            ================================================== -->
+
+            <div class="header">
+
+
+                <div>
+
+                    <h1>
+
+                        Cases
+
+                    </h1>
+
+
+                    <p>
+
+                        View and manage authorized case records.
+
+                    </p>
+
+                </div>
+
+
+                {% if request.user.role == "IO" %}
+
+                    <a
+                        href="{% url 'case_create' %}"
+                        class="btn btn-primary"
+                    >
+
+                        + Create New Case
+
+                    </a>
+
+                {% endif %}
+
+
+            </div>
+
+
+            <!-- =================================================
+                 SEARCH CARD
+            ================================================== -->
+
+            <div class="card">
+
+
+                <div class="search">
+
+
+                    <form method="GET">
+
+
+                        <input
+                            type="text"
+                            name="q"
+                            value="{{ request.GET.q|default:'' }}"
+                            placeholder="Search case number, title, officer..."
+                        >
+
+
+                        <select name="status">
+
+                            <option value="">
+
+                                All Status
+
+                            </option>
+
+
+                            <option
+                                value="OPEN"
+                                {% if request.GET.status == "OPEN" %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                Open
+
+                            </option>
+
+
+                            <option
+                                value="PENDING"
+                                {% if request.GET.status == "PENDING" %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                Pending
+
+                            </option>
+
+
+                            <option
+                                value="CLOSED"
+                                {% if request.GET.status == "CLOSED" %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                Closed
+
+                            </option>
+
+                        </select>
+
+
+                        <select name="case_type">
+
+                            <option value="">
+
+                                All Case Types
+
+                            </option>
+
+
+                            {% for value, label in case_type_choices %}
+
+                                {% if value %}
+
+                                    <option
+                                        value="{{ value }}"
+                                        {% if request.GET.case_type == value %}
+                                            selected
+                                        {% endif %}
+                                    >
+
+                                        {{ label }}
+
+                                    </option>
+
+                                {% endif %}
+
+                            {% endfor %}
+
+                        </select>
+
+
+                        <input
+                            type="text"
+                            name="assigned_officer"
+                            value="{{ request.GET.assigned_officer|default:'' }}"
+                            placeholder="Officer..."
+                        >
+
+
+                        <button type="submit">
+
+                            Search
+
+                        </button>
+
+
+                        {% if request.GET.q or request.GET.status or request.GET.case_type or request.GET.assigned_officer %}
+
+                            <a
+                                href="{% url 'case_list' %}"
+                                class="clear"
+                            >
+
+                                Clear
+
+                            </a>
+
+                        {% endif %}
+
+
+                    </form>
+
+
+                </div>
+
+
+                <!-- =================================================
+                     CASE TABLE
+                ================================================== -->
+
+                {% if cases %}
+
+
+                    <div class="table-container">
+
+
+                        <table>
+
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Case Number
+                                    </th>
+
+                                    <th>
+                                        Case Title
+                                    </th>
+
+                                    <th>
+                                        Type
+                                    </th>
+
+                                    <th>
+                                        Status
+                                    </th>
+
+                                    <th>
+                                        Created By
+                                    </th>
+
+                                    <th>
+                                        Assigned Officer
+                                    </th>
+
+                                    <th>
+                                        Created
+                                    </th>
+
+                                    <th>
+                                        Action
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody>
+
+
+                                {% for case in cases %}
+
+
+                                    <tr>
+
+
+                                        <!-- CASE NUMBER -->
+
+                                        <td>
+
+                                            <a
+                                                href="{% url 'case_detail' case.pk %}"
+                                                class="case-number"
+                                            >
+
+                                                {{ case.case_number }}
+
+                                            </a>
+
+                                        </td>
+
+
+                                        <!-- TITLE -->
+
+                                        <td>
+
+                                            {{ case.title }}
+
+                                        </td>
+
+
+                                        <!-- TYPE -->
+
+                                        <td>
+
+                                            {% if case.case_type == "OTHER" %}
+
+                                                {{ case.other_case_type }}
+
+                                            {% else %}
+
+                                                {{ case.get_case_type_display }}
+
+                                            {% endif %}
+
+                                        </td>
+
+
+                                        <!-- STATUS -->
+
+                                        <td>
+
+
+                                            {% if case.status == "OPEN" %}
+
+                                                <span class="status status-open">
+
+                                                    Open
+
+                                                </span>
+
+
+                                            {% elif case.status == "PENDING" %}
+
+                                                <span class="status status-pending">
+
+                                                    Pending
+
+                                                </span>
+
+
+                                            {% elif case.status == "CLOSED" %}
+
+                                                <span class="status status-closed">
+
+                                                    Closed
+
+                                                </span>
+
+
+                                            {% else %}
+
+                                                <span class="status">
+
+                                                    {{ case.get_status_display }}
+
+                                                </span>
+
+                                            {% endif %}
+
+
+                                        </td>
+
+
+                                        <!-- CREATED BY -->
+
+                                        <td>
+
+                                            {% if case.created_by %}
+
+                                                {{ case.created_by.get_full_name|default:case.created_by.username }}
+
+                                            {% else %}
+
+                                                <span class="unassigned">
+
+                                                    Unknown
+
+                                                </span>
+
+                                            {% endif %}
+
+                                        </td>
+
+
+                                        <!-- ASSIGNED OFFICER -->
+
+                                        <td>
+
+                                            {% if case.assigned_to or case.assigned_officers.all %}
+
+                                                <span class="officer">
+                                                    {% if case.assigned_to %}
+                                                        {{ case.assigned_to.get_full_name|default:case.assigned_to.username }}
+                                                    {% endif %}
+                                                    {% for officer in case.assigned_officers.all %}
+                                                        {% if officer != case.assigned_to %}
+                                                            {% if case.assigned_to %}, {% endif %}
+                                                            {{ officer.get_full_name|default:officer.username }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </span>
+
+                                            {% else %}
+
+                                                <span class="unassigned">
+
+                                                    Not Assigned
+
+                                                </span>
+
+                                            {% endif %}
+
+                                        </td>
+
+
+                                        <!-- CREATED -->
+
+                                        <td>
+
+                                            {{ case.created_at|date:"d M Y" }}
+
+                                            <br>
+
+                                            <span
+                                                style="
+                                                    color:#9ca3af;
+                                                    font-size:11px;
+                                                "
+                                            >
+
+                                                {{ case.created_at|date:"h:i A" }}
+
+                                            </span>
+
+                                        </td>
+
+
+                                        <!-- ACTION -->
+
+                                        <td>
+
+                                            <a
+                                                href="{% url 'case_detail' case.pk %}"
+                                                class="view"
+                                            >
+
+                                                View →
+
+                                            </a>
+
+                                        </td>
+
+
+                                    </tr>
+
+
+                                {% endfor %}
+
+
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
+
+
+                {% else %}
+
+
+                    <!-- =================================================
+                         EMPTY
+                    ================================================== -->
+
+                    <div class="empty">
+
+
+                        <h3>
+
+                            No cases found
+
+                        </h3>
+
+
+                        {% if request.GET.q or request.GET.status or request.GET.case_type or request.GET.assigned_officer %}
+
+                            <p>
+
+                                No cases match your search or filter.
+
+                            </p>
+
+
+                            <div style="margin-top:20px;">
+
+                                <a
+                                    href="{% url 'case_list' %}"
+                                    class="btn btn-primary"
+                                >
+
+                                    Clear Filters
+
+                                </a>
+
+                            </div>
+
+
+                        {% else %}
+
+                            <p>
+
+                                There are no authorized cases available.
+
+                            </p>
+
+
+                            {% if request.user.role == "IO" %}
+
+                                <div style="margin-top:20px;">
+
+                                    <a
+                                        href="{% url 'case_create' %}"
+                                        class="btn btn-primary"
+                                    >
+
+                                        + Create Case
+
+                                    </a>
+
+                                </div>
+
+                            {% endif %}
+
+                        {% endif %}
+
+
+                    </div>
+
+
+                {% endif %}
+
+
+            </div>
+
+
+            <!-- =================================================
+                 ACCESS INFORMATION
+            ================================================== -->
+
+            {% if request.user.role == "IO" %}
+
+                <div class="access-info">
+
+                    <strong>Case access:</strong>
+
+                    You can view cases that you created or cases
+                    assigned to you.
+
+                </div>
+
+            {% endif %}
+
+
+        </main>
+
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

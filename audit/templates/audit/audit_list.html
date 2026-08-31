@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Audit Logs | NyayaVault</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+        }
+
+        .navbar {
+            height: 65px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 30px;
+        }
+
+        .brand {
+            font-size: 21px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .brand span {
+            color: #2563eb;
+        }
+
+        .user {
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .main {
+            max-width: 1400px;
+            margin: 35px auto;
+            padding: 0 25px;
+        }
+
+        .back {
+            display: inline-block;
+            margin-bottom: 20px;
+
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .header {
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 27px;
+            color: #111827;
+        }
+
+        .header p {
+            margin-top: 7px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .security-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 9px;
+
+            padding: 15px 18px;
+            margin-bottom: 20px;
+
+            color: #1e40af;
+            font-size: 13px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+
+            overflow: hidden;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f9fafb;
+
+            text-align: left;
+
+            padding: 14px;
+
+            border-bottom: 1px solid #e5e7eb;
+
+            color: #6b7280;
+
+            font-size: 11px;
+
+            text-transform: uppercase;
+
+            letter-spacing: .4px;
+        }
+
+        td {
+            padding: 15px 14px;
+
+            border-bottom: 1px solid #e5e7eb;
+
+            font-size: 13px;
+
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .action {
+            display: inline-block;
+
+            padding: 5px 8px;
+
+            background: #dbeafe;
+
+            color: #1e40af;
+
+            border-radius: 5px;
+
+            font-size: 11px;
+
+            font-weight: 700;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .role {
+            color: #6b7280;
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .description {
+            max-width: 350px;
+            line-height: 1.5;
+            color: #374151;
+        }
+
+        .case {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .document {
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .version {
+            display: inline-block;
+
+            margin-top: 4px;
+
+            padding: 3px 6px;
+
+            background: #f3f4f6;
+
+            border-radius: 4px;
+
+            font-size: 10px;
+
+            color: #6b7280;
+        }
+
+        .time {
+            white-space: nowrap;
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .ip {
+            font-family: monospace;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 50px 20px;
+
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        @media (max-width: 700px) {
+
+            .navbar {
+                padding: 0 15px;
+            }
+
+            .main {
+                margin-top: 25px;
+                padding: 0 15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="navbar">
+
+    <div class="brand">
+        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+            
+            Nyaya<span>Vault</span>
+        </a>
+    </div>
+
+    <div class="user">
+
+        {{ request.user.get_full_name|default:request.user.username }}
+
+    </div>
+
+</header>
+
+
+<main class="main">
+
+
+    <a
+        href="{% url 'dashboard' %}"
+        class="back"
+    >
+        ← Back to Dashboard
+    </a>
+
+
+    <div class="header">
+
+        <h1>
+            Audit Logs
+        </h1>
+
+        <p>
+            Complete record of security-sensitive activities
+            performed in NyayaVault.
+        </p>
+
+    </div>
+
+
+    <div class="security-box">
+
+        <strong>🔐 Administrator Only</strong>
+
+        <br>
+
+        Audit logs are restricted to administrators.
+        These records help track who performed an action,
+        what was affected and when it occurred.
+
+    </div>
+
+
+    <div class="card">
+
+        {% if logs %}
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Date & Time
+                        </th>
+
+                        <th>
+                            User
+                        </th>
+
+                        <th>
+                            Action
+                        </th>
+
+                        <th>
+                            Description
+                        </th>
+
+                        <th>
+                            Case
+                        </th>
+
+                        <th>
+                            Document
+                        </th>
+
+                        <th>
+                            IP Address
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for log in logs %}
+
+                    <tr>
+
+
+                        <td>
+
+                            <div class="time">
+
+                                {{ log.timestamp|date:"d M Y" }}
+
+                                <br>
+
+                                {{ log.timestamp|date:"h:i:s A" }}
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            {% if log.user %}
+
+                                <div class="user-name">
+                                    {{ log.user.get_full_name|default:log.user.username }}
+                                </div>
+
+                                <div class="role">
+
+                                    {{ log.user.get_role_display }}
+
+                                </div>
+
+                            {% else %}
+
+                                <span class="role">
+                                    Deleted User
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            <span class="action">
+
+                                {{ log.get_action_display }}
+
+                            </span>
+
+                        </td>
+
+
+                        <td>
+
+                            <div class="description">
+
+                                {{ log.description }}
+
+                            </div>
+
+                        </td>
+
+
+                        <td>
+
+                            {% if log.case %}
+
+                                <div class="case">
+
+                                    {{ log.case.case_number }}
+
+                                </div>
+
+                                <div class="role">
+
+                                    {{ log.case.title }}
+
+                                </div>
+
+                            {% else %}
+
+                                —
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if log.document %}
+
+                                <div class="document">
+
+                                    {{ log.document.name }}
+
+                                </div>
+
+                                {% if log.document_version %}
+
+                                    <span class="version">
+
+                                        v{{ log.document_version.version_number }}
+
+                                    </span>
+
+                                {% endif %}
+
+                            {% else %}
+
+                                —
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <td>
+
+                            {% if log.ip_address %}
+
+                                <span class="ip">
+
+                                    {{ log.ip_address }}
+
+                                </span>
+
+                            {% else %}
+
+                                —
+
+                            {% endif %}
+
+                        </td>
+
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+            <div class="empty">
+
+                No audit activities have been recorded yet.
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

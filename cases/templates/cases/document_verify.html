@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Verify Document | NyayaVault</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+        }
+
+        .navbar {
+            height: 65px;
+
+            background: white;
+
+            border-bottom: 1px solid #e5e7eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 30px;
+        }
+
+        .brand {
+            font-size: 21px;
+            font-weight: 700;
+        }
+
+        .brand span {
+            color: #2563eb;
+        }
+
+        .main {
+            max-width: 850px;
+
+            margin: 40px auto;
+
+            padding: 0 20px;
+        }
+
+        .back {
+            color: #2563eb;
+
+            text-decoration: none;
+
+            font-size: 14px;
+        }
+
+        .header {
+            margin-top: 25px;
+
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+
+            color: #111827;
+        }
+
+        .header p {
+            margin-top: 7px;
+
+            color: #6b7280;
+
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 10px;
+
+            padding: 25px;
+
+            margin-bottom: 20px;
+        }
+
+        .info {
+            background: #f8fafc;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 8px;
+
+            padding: 18px;
+
+            line-height: 1.8;
+
+            font-size: 14px;
+        }
+
+        .label {
+            color: #6b7280;
+
+            font-size: 12px;
+        }
+
+        .value {
+            font-weight: 600;
+
+            color: #111827;
+        }
+
+        .result {
+            padding: 25px;
+
+            border-radius: 9px;
+
+            text-align: center;
+
+            margin-top: 20px;
+        }
+
+        .valid {
+            background: #ecfdf5;
+
+            border: 1px solid #a7f3d0;
+
+            color: #065f46;
+        }
+
+        .invalid {
+            background: #fef2f2;
+
+            border: 1px solid #fecaca;
+
+            color: #991b1b;
+        }
+
+        .result-icon {
+            font-size: 35px;
+
+            margin-bottom: 10px;
+        }
+
+        .result-title {
+            font-size: 20px;
+
+            font-weight: 700;
+
+            margin-bottom: 8px;
+        }
+
+        .hash {
+            margin-top: 15px;
+
+            padding: 12px;
+
+            background: #f9fafb;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 6px;
+
+            font-family: monospace;
+
+            font-size: 11px;
+
+            word-break: break-all;
+
+            text-align: left;
+
+            color: #374151;
+        }
+
+        .actions {
+            margin-top: 25px;
+
+            display: flex;
+
+            justify-content: space-between;
+        }
+
+        .btn {
+            padding: 11px 17px;
+
+            border-radius: 7px;
+
+            text-decoration: none;
+
+            border: none;
+
+            cursor: pointer;
+
+            font-size: 13px;
+
+            font-weight: 600;
+        }
+
+        .primary {
+            background: #2563eb;
+
+            color: white;
+        }
+
+        .secondary {
+            background: #f3f4f6;
+
+            color: #374151;
+        }
+
+        .btn:focus,
+        input:focus,
+        button:focus,
+        a:focus {
+            outline: 3px solid #bfdbfe;
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 650px) {
+            .navbar { padding: 0 16px; }
+            .main { margin: 24px auto; padding: 0 14px; }
+            .card { padding: 20px; }
+            .user { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .actions { flex-direction: column-reverse; gap: 10px; align-items: stretch; }
+            .actions .btn { width: 100%; text-align: center; }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header class="navbar">
+
+    <div class="brand">
+        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+            
+            Nyaya<span>Vault</span>
+        </a>
+    </div>
+
+    <div>
+        {{ request.user.username }}
+    </div>
+
+</header>
+
+
+<main class="main">
+
+
+    <a
+        href="{% url 'document_detail' version.document.pk %}"
+        class="back"
+    >
+        ← Back to Document
+    </a>
+
+
+    <div class="header">
+
+        <h1>
+            Verify Digital Signature
+        </h1>
+
+        <p>
+            Verify the authenticity and integrity of this
+            document version.
+        </p>
+
+    </div>
+
+
+    <div class="card">
+
+
+        <div class="info">
+
+            <div>
+                <span class="label">
+                    Document
+                </span>
+
+                <br>
+
+                <span class="value">
+                    {{ version.document.name }}
+                </span>
+            </div>
+
+
+            <div>
+                <span class="label">
+                    Case
+                </span>
+
+                <br>
+
+                <span class="value">
+                    {{ version.document.case.case_number }}
+                </span>
+            </div>
+
+
+            <div>
+                <span class="label">
+                    Version
+                </span>
+
+                <br>
+
+                <span class="value">
+                    v{{ version.version_number }}
+                </span>
+            </div>
+
+
+            {% if version.signed_by %}
+
+                <div>
+
+                    <span class="label">
+                        Signed By
+                    </span>
+
+                    <br>
+
+                    <span class="value">
+                        {{ version.signed_by }}
+                    </span>
+
+                </div>
+
+            {% endif %}
+
+
+        </div>
+
+
+        {% if verification_result is not None %}
+
+
+            {% if verification_result %}
+
+                <div class="result valid">
+
+                    <div class="result-icon">
+                        ✓
+                    </div>
+
+                    <div class="result-title">
+                        Digital Signature Valid
+                    </div>
+
+                    <p>
+                        The document has not been modified
+                        since it was digitally signed.
+                    </p>
+
+                </div>
+
+            {% else %}
+
+                <div class="result invalid">
+
+                    <div class="result-icon">
+                        ✕
+                    </div>
+
+                    <div class="result-title">
+                        Verification Failed
+                    </div>
+
+                    <p>
+                        The digital signature is invalid or
+                        the document has been modified.
+                    </p>
+
+                </div>
+
+            {% endif %}
+
+
+            {% if current_hash %}
+
+                <div class="hash">
+
+                    <strong>
+                        Current SHA-256:
+                    </strong>
+
+                    <br><br>
+
+                    {{ current_hash }}
+
+                    <br><br>
+
+                    <strong>
+                        Original SHA-256:
+                    </strong>
+
+                    <br><br>
+
+                    {{ version.file_hash }}
+
+                </div>
+
+            {% endif %}
+
+
+        {% else %}
+
+
+            <div class="result">
+
+                <p>
+                    Click the button below to verify this
+                    document.
+                </p>
+
+            </div>
+
+
+        {% endif %}
+
+
+        <div class="actions">
+
+
+            <a
+                href="{% url 'document_detail' version.document.pk %}"
+                class="btn secondary"
+            >
+                Cancel
+            </a>
+
+
+            <form method="POST">
+
+                {% csrf_token %}
+
+                <button
+                    type="submit"
+                    class="btn primary"
+                >
+                    Verify Document
+                </button>
+
+            </form>
+
+
+        </div>
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

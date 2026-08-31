@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Verify Document | NyayaVault</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+        }
+
+
+        /* ================= NAVBAR ================= */
+
+        .navbar {
+            height: 65px;
+
+            background: white;
+
+            border-bottom: 1px solid #e5e7eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 30px;
+        }
+
+
+        .brand {
+            font-size: 21px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+
+        .brand span {
+            color: #2563eb;
+        }
+
+
+        .user {
+            font-size: 14px;
+            color: #374151;
+        }
+
+
+        /* ================= MAIN ================= */
+
+        .main {
+            max-width: 900px;
+
+            margin: 40px auto;
+
+            padding: 0 20px;
+        }
+
+
+        /* ================= BACK ================= */
+
+        .back {
+            display: inline-block;
+
+            margin-bottom: 20px;
+
+            color: #2563eb;
+
+            text-decoration: none;
+
+            font-size: 14px;
+        }
+
+
+        .back:hover {
+            text-decoration: underline;
+        }
+
+
+        /* ================= CARD ================= */
+
+        .card {
+            background: white;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 10px;
+
+            padding: 30px;
+
+            margin-bottom: 20px;
+        }
+
+
+        .title {
+            font-size: 25px;
+
+            color: #111827;
+
+            margin-bottom: 8px;
+        }
+
+
+        .subtitle {
+            color: #6b7280;
+
+            font-size: 14px;
+
+            margin-bottom: 25px;
+        }
+
+
+        /* ================= RESULT ================= */
+
+        .result {
+            text-align: center;
+
+            padding: 25px;
+
+            border-radius: 10px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .result.valid {
+            background: #f0fdf4;
+
+            border: 1px solid #bbf7d0;
+
+            color: #166534;
+        }
+
+
+        .result.invalid {
+            background: #fef2f2;
+
+            border: 1px solid #fecaca;
+
+            color: #991b1b;
+        }
+
+
+        .result-icon {
+            font-size: 42px;
+
+            margin-bottom: 10px;
+        }
+
+
+        .result-title {
+            font-size: 20px;
+
+            font-weight: 700;
+
+            margin-bottom: 7px;
+        }
+
+
+        .result-text {
+            font-size: 13px;
+        }
+
+
+        /* ================= INFO ================= */
+
+        .info-grid {
+            display: grid;
+
+            grid-template-columns: 1fr 1fr;
+
+            gap: 15px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .info {
+            background: #f8fafc;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 7px;
+
+            padding: 15px;
+        }
+
+
+        .label {
+            font-size: 11px;
+
+            text-transform: uppercase;
+
+            color: #6b7280;
+
+            margin-bottom: 6px;
+
+            letter-spacing: .4px;
+        }
+
+
+        .value {
+            font-size: 14px;
+
+            font-weight: 600;
+
+            color: #111827;
+        }
+
+
+        /* ================= CHECKS ================= */
+
+        .checks {
+            border-top: 1px solid #e5e7eb;
+
+            padding-top: 20px;
+        }
+
+
+        .check {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 14px 0;
+
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+
+        .check:last-child {
+            border-bottom: none;
+        }
+
+
+        .check-name {
+            font-size: 14px;
+
+            font-weight: 600;
+
+            color: #374151;
+        }
+
+
+        .check-description {
+            font-size: 12px;
+
+            color: #9ca3af;
+
+            margin-top: 3px;
+        }
+
+
+        .check-valid {
+            color: #166534;
+
+            font-weight: 700;
+
+            font-size: 13px;
+        }
+
+
+        .check-invalid {
+            color: #dc2626;
+
+            font-weight: 700;
+
+            font-size: 13px;
+        }
+
+
+        /* ================= HASH ================= */
+
+        .hash-section {
+            margin-top: 25px;
+        }
+
+
+        .hash-title {
+            font-size: 14px;
+
+            font-weight: 600;
+
+            color: #374151;
+
+            margin-bottom: 8px;
+        }
+
+
+        .hash {
+            background: #f8fafc;
+
+            border: 1px solid #e5e7eb;
+
+            border-radius: 7px;
+
+            padding: 12px;
+
+            font-family: monospace;
+
+            font-size: 11px;
+
+            color: #4b5563;
+
+            word-break: break-all;
+
+            line-height: 1.6;
+        }
+
+
+        /* ================= BUTTON ================= */
+
+        .btn {
+            display: inline-block;
+
+            padding: 11px 17px;
+
+            border-radius: 7px;
+
+            background: #2563eb;
+
+            color: white;
+
+            text-decoration: none;
+
+            font-size: 13px;
+
+            font-weight: 600;
+        }
+
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+
+        /* ================= SECURITY ================= */
+
+        .security {
+            margin-top: 20px;
+
+            padding: 15px;
+
+            background: #eff6ff;
+
+            border: 1px solid #bfdbfe;
+
+            border-radius: 8px;
+
+            color: #1e40af;
+
+            font-size: 13px;
+
+            line-height: 1.6;
+        }
+
+
+        /* ================= RESPONSIVE ================= */
+
+        @media (max-width: 650px) {
+
+            .navbar {
+                padding: 0 15px;
+            }
+
+
+            .main {
+                margin-top: 25px;
+            }
+
+
+            .card {
+                padding: 20px;
+            }
+
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar { padding: 0 16px; }
+            .main { margin: 24px auto; padding: 0 14px; }
+            .user { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .card { padding: 20px; }
+            .check { gap: 12px; align-items: flex-start; }
+            .check-valid, .check-invalid { white-space: nowrap; }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ================= NAVBAR ================= -->
+
+<header class="navbar">
+
+    <div class="brand">
+        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+            
+            Nyaya<span>Vault</span>
+        </a>
+    </div>
+
+
+    <div class="user">
+
+        {{ request.user.get_full_name|default:request.user.username }}
+
+    </div>
+
+</header>
+
+
+
+<!-- ================= MAIN ================= -->
+
+<main class="main">
+
+
+    <!-- BACK -->
+
+    <a
+        href="{% url 'document_detail' version.document.pk %}"
+        class="back"
+    >
+        ← Back to Document
+    </a>
+
+
+
+    <div class="card">
+
+
+        <!-- ================= HEADER ================= -->
+
+        <h1 class="title">
+            Document Verification
+        </h1>
+
+
+        <p class="subtitle">
+
+            Cryptographic integrity and digital signature verification
+
+        </p>
+
+
+
+        <!-- ================= RESULT ================= -->
+
+        {% if is_valid %}
+
+            <div class="result valid">
+
+                <div class="result-icon">
+                    ✓
+                </div>
+
+                <div class="result-title">
+                    Document Verified
+                </div>
+
+                <div class="result-text">
+
+                    The document has not been modified after
+                    it was digitally signed.
+
+                </div>
+
+            </div>
+
+        {% else %}
+
+            <div class="result invalid">
+
+                <div class="result-icon">
+                    ✕
+                </div>
+
+                <div class="result-title">
+                    Verification Failed
+                </div>
+
+                <div class="result-text">
+
+                    The document could not be fully verified.
+
+                </div>
+
+            </div>
+
+        {% endif %}
+
+
+
+        <!-- ================= DOCUMENT INFO ================= -->
+
+        <div class="info-grid">
+
+
+            <div class="info">
+
+                <div class="label">
+                    Document
+                </div>
+
+                <div class="value">
+                    {{ version.document.name }}
+                </div>
+
+            </div>
+
+
+            <div class="info">
+
+                <div class="label">
+                    Version
+                </div>
+
+                <div class="value">
+                    v{{ version.version_number }}
+                </div>
+
+            </div>
+
+
+            <div class="info">
+
+                <div class="label">
+                    Uploaded By
+                </div>
+
+                <div class="value">
+                    {{ version.uploaded_by }}
+                </div>
+
+            </div>
+
+
+            <div class="info">
+
+                <div class="label">
+                    Signed By
+                </div>
+
+                <div class="value">
+
+                    {% if version.signed_by %}
+
+                        {{ version.signed_by }}
+
+                    {% else %}
+
+                        Not signed
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ================= VERIFICATION CHECKS ================= -->
+
+        <div class="checks">
+
+
+            <!-- FILE HASH -->
+
+            <div class="check">
+
+                <div>
+
+                    <div class="check-name">
+                        File Integrity
+                    </div>
+
+                    <div class="check-description">
+                        Current file SHA-256 matches the stored hash
+                    </div>
+
+                </div>
+
+
+                {% if hash_valid %}
+
+                    <div class="check-valid">
+                        ✓ VALID
+                    </div>
+
+                {% else %}
+
+                    <div class="check-invalid">
+                        ✕ INVALID
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+
+            <!-- DIGITAL SIGNATURE -->
+
+            <div class="check">
+
+                <div>
+
+                    <div class="check-name">
+                        Digital Signature
+                    </div>
+
+                    <div class="check-description">
+                        Signature matches the document hash and signer
+                    </div>
+
+                </div>
+
+
+                {% if signature_valid %}
+
+                    <div class="check-valid">
+                        ✓ VALID
+                    </div>
+
+                {% else %}
+
+                    <div class="check-invalid">
+                        ✕ INVALID
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ================= STORED HASH ================= -->
+
+        <div class="hash-section">
+
+            <div class="hash-title">
+                Stored SHA-256 Hash
+            </div>
+
+            <div class="hash">
+
+                {{ stored_hash|default:"No hash available" }}
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================= CURRENT HASH ================= -->
+
+        <div class="hash-section">
+
+            <div class="hash-title">
+                Current File SHA-256 Hash
+            </div>
+
+            <div class="hash">
+
+                {{ current_hash }}
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ================= SECURITY INFO ================= -->
+
+        <div class="security">
+
+            <strong>
+                🔐 How verification works
+            </strong>
+
+            <br><br>
+
+            NyayaVault calculates the SHA-256 hash of the
+            current file and compares it with the hash stored
+            when the document was signed.
+
+            If the hashes match and the digital signature is
+            valid, the document is considered authentic and
+            unchanged.
+
+        </div>
+
+
+        <br>
+
+
+        <!-- ================= BACK BUTTON ================= -->
+
+        <a
+            href="{% url 'document_detail' version.document.pk %}"
+            class="btn"
+        >
+            Back to Document
+        </a>
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

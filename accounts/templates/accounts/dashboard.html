@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard | NyayaVault</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+        }
+
+        /* ================= NAVBAR ================= */
+
+        .navbar {
+            height: 65px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 30px;
+        }
+
+        .brand {
+            font-size: 21px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .brand span {
+            color: #2563eb;
+        }
+
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+
+            border-radius: 50%;
+            background: #2563eb;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-weight: bold;
+        }
+
+        .user-info {
+            font-size: 13px;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .user-role {
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+
+        /* ================= LAYOUT ================= */
+
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 65px);
+        }
+
+
+        /* ================= SIDEBAR ================= */
+
+        .sidebar {
+            width: 230px;
+            background: #111827;
+            padding: 25px 15px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-title {
+            color: #9ca3af;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin: 0 12px 12px;
+        }
+
+        .nav-item {
+            display: block;
+
+            padding: 11px 13px;
+            margin-bottom: 5px;
+
+            border-radius: 6px;
+
+            color: #d1d5db;
+            text-decoration: none;
+
+            font-size: 14px;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #1f2937;
+            color: white;
+        }
+
+        .nav-icon {
+            display: inline-block;
+            width: 25px;
+        }
+
+
+        /* ================= MAIN ================= */
+
+        .main {
+            flex: 1;
+            padding: 35px;
+            max-width: 1500px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 28px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            color: #111827;
+        }
+
+        .header p {
+            color: #6b7280;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        .create-btn {
+            display: inline-block;
+
+            background: #2563eb;
+            color: white;
+
+            padding: 11px 18px;
+
+            border-radius: 7px;
+
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .create-btn:hover {
+            background: #1d4ed8;
+        }
+
+
+        /* ================= STATISTICS ================= */
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 22px;
+        }
+
+        .stat-title {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 8px;
+            color: #111827;
+        }
+
+
+        /* ================= CONTENT ================= */
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .section-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            color: #111827;
+        }
+
+
+        /* ================= CASE ================= */
+
+        .case {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 16px 0;
+        }
+
+        .case:last-child {
+            border-bottom: none;
+        }
+
+        .case-number {
+            color: #2563eb;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .case-number a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .case-number a:hover {
+            text-decoration: underline;
+        }
+
+        .case-title {
+            margin-top: 5px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .case-meta {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .status {
+            display: inline-block;
+
+            margin-top: 10px;
+
+            padding: 4px 8px;
+
+            border-radius: 5px;
+
+            font-size: 11px;
+            font-weight: 600;
+
+            background: #dcfce7;
+            color: #166534;
+        }
+
+
+        /* ================= EMPTY ================= */
+
+        .empty {
+            padding: 35px 10px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .empty p {
+            margin-bottom: 15px;
+        }
+
+
+        /* ================= QUICK ACTIONS ================= */
+
+        .quick-action {
+            display: block;
+
+            padding: 13px 14px;
+            margin-bottom: 9px;
+
+            border: 1px solid #e5e7eb;
+            border-radius: 7px;
+
+            text-decoration: none;
+            color: #374151;
+
+            font-size: 13px;
+            background: white;
+        }
+
+        .quick-action:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+
+        /* ================= INFO BOX ================= */
+
+        .info-box {
+            margin-top: 20px;
+            padding: 16px;
+
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #374151;
+        }
+
+        .nav-item:focus,
+        .create-btn:focus,
+        .quick-action:focus {
+            outline: 3px solid #93c5fd;
+            outline-offset: 2px;
+        }
+
+
+        /* ================= RESPONSIVE ================= */
+
+        @media (max-width: 1000px) {
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+        @media (max-width: 700px) {
+
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 20px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .user-area { gap: 9px; }
+            .user-info { display: none; }
+            .avatar { width: 34px; height: 34px; }
+            .header h1 { font-size: 23px; }
+            .create-btn { width: 100%; text-align: center; }
+            .card { padding: 18px; }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ================= NAVBAR ================= -->
+
+<header class="navbar">
+
+    <div class="brand">
+        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
+            
+            Nyaya<span>Vault</span>
+        </a>
+    </div>
+
+
+    <div class="user-area">
+
+        <div class="avatar">
+
+            {% if request.user.first_name %}
+                {{ request.user.first_name|first|upper }}
+            {% else %}
+                {{ request.user.username|first|upper }}
+            {% endif %}
+
+        </div>
+
+
+        <div class="user-info">
+
+            <div class="user-name">
+
+                {% if request.user.get_full_name %}
+                    {{ request.user.get_full_name }}
+                {% else %}
+                    {{ request.user.username }}
+                {% endif %}
+
+            </div>
+
+            <div class="user-role">
+                {{ request.user.get_role_display }}
+            </div>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+
+
+
+<div class="layout">
+
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+
+        <div class="sidebar-title">
+            Main
+        </div>
+
+
+        <!-- Dashboard -->
+
+        <a
+            href="{% url 'dashboard' %}"
+            class="nav-item active"
+        >
+            <span class="nav-icon">▣</span>
+            Dashboard
+        </a>
+
+
+        <!-- Cases -->
+
+        <a
+            href="{% url 'case_list' %}"
+            class="nav-item"
+        >
+            <span class="nav-icon">▤</span>
+            Cases
+        </a>
+
+
+        <!-- Documents -->
+
+        <a
+            href="{% url 'case_list' %}"
+            class="nav-item"
+        >
+            <span class="nav-icon">▧</span>
+                Case Documents
+        </a>
+
+
+
+        <!-- ================= IO ================= -->
+
+        {% if request.user.role == "IO" %}
+
+            <br>
+
+            <div class="sidebar-title">
+                Investigation
+            </div>
+
+
+            <a
+                href="{% url 'case_create' %}"
+                class="nav-item"
+            >
+                <span class="nav-icon">+</span>
+                Create Case
+            </a>
+
+        {% endif %}
+
+
+
+        <!-- ================= SHO ================= -->
+
+        {% if request.user.role == "SHO" %}
+
+            <br>
+
+            <div class="sidebar-title">
+                Management
+            </div>
+
+
+            <a
+                href="{% url 'case_list' %}"
+                class="nav-item"
+            >
+                <span class="nav-icon">✓</span>
+                Review Cases
+            </a>
+
+        {% endif %}
+
+
+
+        <!-- ================= FORENSIC ================= -->
+
+        {% if request.user.role == "FORENSIC_OFFICER" %}
+
+            <br>
+
+            <div class="sidebar-title">
+                Forensics
+            </div>
+
+
+            <a
+                href="{% url 'case_list' %}"
+                class="nav-item"
+            >
+                <span class="nav-icon">⌕</span>
+                Assigned Cases
+            </a>
+
+
+            <a
+                href="{% url 'case_list' %}"
+                class="nav-item"
+            >
+                <span class="nav-icon">▧</span>
+                Case Documents
+            </a>
+
+        {% endif %}
+
+
+
+        <!-- ================= SYSTEM ================= -->
+
+        <br>
+
+        <div class="sidebar-title">
+            System
+        </div>
+
+
+{% if request.user.role == "ADMIN" %}
+
+<a
+    href="{% url 'audit_list' %}"
+    class="nav-item"
+>
+    <span class="nav-icon">◷</span>
+    Audit Logs
+</a>
+
+{% endif %}
+
+        <a
+            href="#"
+            class="nav-item"
+        >
+            <span class="nav-icon">●</span>
+            Notifications
+        </a>
+
+
+        <!-- Logout -->
+
+        <a
+            href="{% url 'logout' %}"
+            class="nav-item"
+        >
+            <span class="nav-icon">↪</span>
+            Logout
+        </a>
+
+
+    </aside>
+
+
+
+    <!-- ================= MAIN ================= -->
+
+    <main class="main">
+
+
+        <!-- ================= HEADER ================= -->
+
+        <div class="header">
+
+            <div>
+
+                <h1>
+
+                    {% if request.user.role == "IO" %}
+
+                        IO Dashboard
+
+                    {% elif request.user.role == "SHO" %}
+
+                        SHO Dashboard
+
+                    {% elif request.user.role == "FORENSIC_OFFICER" %}
+
+                        Forensic Dashboard
+
+                    {% else %}
+
+                        Dashboard
+
+                    {% endif %}
+
+                </h1>
+
+
+                <p>
+
+                    Welcome back,
+
+                    {% if request.user.first_name %}
+                        {{ request.user.first_name }}
+                    {% else %}
+                        {{ request.user.username }}
+                    {% endif %}
+
+                    . Here's your case management overview.
+
+                </p>
+
+            </div>
+
+
+
+            <!-- IO ONLY -->
+
+            {% if request.user.role == "IO" %}
+
+                <a
+                    href="{% url 'case_create' %}"
+                    class="create-btn"
+                >
+                    + Create New Case
+                </a>
+
+            {% endif %}
+
+        </div>
+
+
+
+        <!-- ================= STATISTICS ================= -->
+
+        <div class="stats">
+
+
+            <!-- CASES -->
+
+            <div class="card">
+
+                <div class="stat-title">
+
+                    {% if request.user.role == "IO" %}
+                        My Cases
+                    {% elif request.user.role == "SHO" %}
+                        Total Cases
+                    {% else %}
+                        Assigned Cases
+                    {% endif %}
+
+                </div>
+
+
+                <div class="stat-value">
+                    {{ total_cases|default:"0" }}
+                </div>
+
+            </div>
+
+
+
+            <!-- DOCUMENTS -->
+
+            <div class="card">
+
+                <div class="stat-title">
+                    Documents
+                </div>
+
+
+                <div class="stat-value">
+                    {{ total_documents|default:"0" }}
+                </div>
+
+            </div>
+
+
+
+            <!-- PENDING -->
+
+            <div class="card">
+
+                <div class="stat-title">
+
+                    {% if request.user.role == "SHO" %}
+
+                        Pending Reviews
+
+                    {% elif request.user.role == "FORENSIC_OFFICER" %}
+
+                        Pending Requests
+
+                    {% else %}
+
+                        Pending Actions
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="stat-value">
+                    {{ pending_count|default:"0" }}
+                </div>
+
+            </div>
+
+
+
+            <!-- FORENSIC -->
+
+            <div class="card">
+
+                <div class="stat-title">
+
+                    {% if request.user.role == "FORENSIC_OFFICER" %}
+
+                        Reports Submitted
+
+                    {% else %}
+
+                        Forensic Reports
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="stat-value">
+                    {{ forensic_reports|default:"0" }}
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ================= CONTENT ================= -->
+
+        <!-- ================= CONTENT ================= -->
+
+<div class="content-grid">
+
+    <!-- ================= ASSIGNED CASES ================= -->
+
+    <div class="card">
+
+        <div class="section-title">
+            {% if request.user.role == "SHO" %}
+                All Cases
+            {% else %}
+                My Assigned Cases
+            {% endif %}
+        </div>
+
+
+        {% for case in assigned_cases %}
+
+            <div class="case">
+
+                <div class="case-number">
+
+                    <a href="{% url 'case_detail' case.pk %}">
+                        {{ case.case_number }}
+                    </a>
+
+                </div>
+
+
+                <div class="case-title">
+
+                    {{ case.title }}
+
+                </div>
+
+
+                <div class="case-meta">
+
+                    {% if case.case_type == "OTHER" %}
+
+                        {{ case.other_case_type }}
+
+                    {% else %}
+
+                        {{ case.get_case_type_display }}
+
+                    {% endif %}
+
+                    &nbsp;•&nbsp;
+
+                    Updated {{ case.updated_at|date:"M d, Y" }}
+
+                </div>
+
+
+                <!-- ASSIGNMENT INFORMATION -->
+
+                <div class="assignment">
+
+                    {% if case.assigned_to == request.user %}
+
+                        <span class="assignment-badge primary">
+                            Directly Assigned
+                        </span>
+
+                    {% elif request.user in case.assigned_officers.all %}
+
+                        <span class="assignment-badge">
+                            Collaborating Officer
+                        </span>
+
+                    {% endif %}
+
+                </div>
+
+
+                <div class="status
+                    {% if case.status == 'PENDING' %}
+                        pending
+                    {% elif case.status == 'CLOSED' %}
+                        closed
+                    {% endif %}
+                ">
+
+                    {{ case.get_status_display }}
+
+                </div>
+
+            </div>
+
+
+        {% empty %}
+
+            <div class="empty">
+
+                <p>
+                    No cases have been assigned to you.
+                </p>
+
+                {% if request.user.role == "IO" %}
+
+                    <a
+                        href="{% url 'case_create' %}"
+                        class="create-btn"
+                    >
+                        Create New Case
+                    </a>
+
+                {% endif %}
+
+            </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    <!-- ================= QUICK ACTIONS ================= -->
+
+    <div class="card">
+
+        <div class="section-title">
+            Quick Actions
+        </div>
+
+
+        <!-- IO -->
+
+        {% if request.user.role == "IO" %}
+
+            <a
+                href="{% url 'case_create' %}"
+                class="quick-action"
+            >
+                + Create New Case
+            </a>
+
+            <a
+                href="{% url 'case_list' %}"
+                class="quick-action"
+            >
+                View My Cases
+            </a>
+
+            <a
+                href="{% url 'case_list' %}"
+                class="quick-action"
+            >
+                View Case Documents
+            </a>
+
+
+        <!-- SHO -->
+
+        {% elif request.user.role == "SHO" %}
+
+            <a
+                href="{% url 'case_list' %}"
+                class="quick-action"
+            >
+                View All Cases
+            </a>
+
+            <a
+                href="{% url 'case_list' %}"
+                class="quick-action"
+            >
+                Review Case Documents
+            </a>
+
+            <a
+                href="{% url 'audit_list' %}"
+                class="quick-action"
+            >
+                View Audit Logs
+            </a>
+
+
+        <!-- FORENSIC -->
+
+        {% elif request.user.role == "FORENSIC_OFFICER" %}
+
+            <a
+                href="{% url 'case_list' %}"
+                class="quick-action"
+            >
+                View Assigned Cases
+            </a>
+
+            <a
+                href="{% url 'case_list' %}"
+                class="quick-action"
+            >
+                View Assigned Documents
+            </a>
+
+        {% endif %}
+
+
+        <!-- ================= ROLE INFO ================= -->
+
+        <div class="info-box">
+
+            {% if request.user.role == "IO" %}
+
+                <strong>Investigating Officer</strong><br>
+
+                You can create cases, manage investigations,
+                upload documents and collaborate with assigned officers.
+
+            {% elif request.user.role == "SHO" %}
+
+                <strong>Station House Officer</strong><br>
+
+                You can monitor cases, assign investigating officers
+                and review investigation documents.
+
+            {% elif request.user.role == "FORENSIC_OFFICER" %}
+
+                <strong>Forensic Officer</strong><br>
+
+                You can access cases assigned to you and work with
+                authorized forensic documents and reports.
+
+            {% else %}
+
+                <strong>NyayaVault User</strong><br>
+
+                Manage authorized case records and documents.
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+    </main>
+
+
+</div>
+
+
+</body>
+</html>
