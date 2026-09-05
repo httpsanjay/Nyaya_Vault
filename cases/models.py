@@ -158,6 +158,18 @@ class Document(models.Model):
 
 class DocumentVersion(models.Model):
 
+    OCR_PENDING = "PENDING"
+    OCR_PROCESSING = "PROCESSING"
+    OCR_COMPLETED = "COMPLETED"
+    OCR_FAILED = "FAILED"
+
+    OCR_STATUS_CHOICES = [
+        (OCR_PENDING, "Pending"),
+        (OCR_PROCESSING, "Processing"),
+        (OCR_COMPLETED, "Completed"),
+        (OCR_FAILED, "Failed"),
+    ]
+
     STATUS_CHOICES = [
         ("DRAFT", "Draft"),
         ("PENDING_REVIEW", "Pending Review"),
@@ -179,6 +191,12 @@ class DocumentVersion(models.Model):
     upload_to=document_version_upload_path
 )
     extracted_text = models.TextField(blank=True)
+
+    ocr_status = models.CharField(
+        max_length=20,
+        choices=OCR_STATUS_CHOICES,
+        default=OCR_PENDING,
+    )
 
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -277,23 +295,6 @@ class DocumentVersion(models.Model):
                 update_fields=["file_hash"]
             )
 
-        # =========================
-        # OCR TEXT EXTRACTION
-        # =========================
-
-        if self.file and not self.extracted_text:
-
-            from .ocr import extract_text
-
-            self.extracted_text = extract_text(
-                self.file.path
-            )
-
-            super().save(
-                update_fields=["extracted_text"]
-            )
-
-    
 class UserSigningKey(models.Model):
 
     user = models.OneToOneField(

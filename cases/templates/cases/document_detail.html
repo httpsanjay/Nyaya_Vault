@@ -658,6 +658,13 @@
 
 <main class="main">
 
+    {% if messages %}
+        {% for message in messages %}
+            <div class="security">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
 
     <!-- BACK -->
 
@@ -718,6 +725,32 @@
                     + Upload New Version
                 </a>
 
+            {% endif %}
+
+            {% if request.user.role == "SHO" %}
+                {% if signing_key_enabled %}
+                    <div class="status status-signed">
+                        Digital Signing Enabled ✓
+                    </div>
+                {% else %}
+                    <form
+                        method="POST"
+                        action="{% url 'enable_digital_signing' %}"
+                    >
+                        {% csrf_token %}
+                        <input
+                            type="hidden"
+                            name="document_pk"
+                            value="{{ document.pk }}"
+                        >
+                        <button
+                            type="submit"
+                            class="btn btn-sign"
+                        >
+                            Enable Digital Signing
+                        </button>
+                    </form>
+                {% endif %}
             {% endif %}
 
         </div>
@@ -1031,22 +1064,16 @@
                                     {% elif version.status == "SIGNED" %}
 
                                         <span class="status status-signed">
-                                            ✓ Digitally Signed
+                                            Digitally Signed ✓
                                         </span>
 
-
-                                    {% elif version.status == "REJECTED" %}
-
-                                        <span class="status status-rejected">
-                                            Rejected
-                                        </span>
-
-
-                                    {% else %}
-
-                                        <span class="status status-draft">
-                                            {{ version.status }}
-                                        </span>
+                                        <div class="version-info">
+                                            Signed by:
+                                            {{ version.signed_by.get_full_name|default:version.signed_by.username }}
+                                            <br>
+                                            Signed at:
+                                            {{ version.signed_at|date:"d M Y, h:i A" }}
+                                        </div>
 
                                     {% endif %}
 
@@ -1116,7 +1143,6 @@
                                                     ✓ Verify Signature
                                                 </a>
 
-
                                             {% elif version.status == "REJECTED" %}
 
                                                 <span
@@ -1185,23 +1211,25 @@
 
                                             {% elif version.status == "APPROVED" %}
 
-
-                                                <form
-                                                    method="POST"
-                                                    action="{% url 'sign_document_version' version.pk %}"
-                                                    class="inline-form"
-                                                >
-
-                                                    {% csrf_token %}
-
-                                                    <button
-                                                        type="submit"
-                                                        class="btn btn-sign btn-small"
+                                                {% if signing_key_enabled %}
+                                                    <form
+                                                        method="POST"
+                                                        action="{% url 'sign_document_version' version.pk %}"
+                                                        class="inline-form"
                                                     >
-                                                        Digitally Sign
-                                                    </button>
-
-                                                </form>
+                                                        {% csrf_token %}
+                                                        <button
+                                                            type="submit"
+                                                            class="btn btn-sign btn-small"
+                                                        >
+                                                            Digitally Sign
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <span class="muted">
+                                                        Enable digital signing first
+                                                    </span>
+                                                {% endif %}
 
 
                                             {% elif version.status == "SIGNED" %}
@@ -1317,6 +1345,10 @@
                                             {% endif %}
 
                                         {% else %}
+
+                                        {% if version.status == "SIGNED" %}
+                                                <p>Signed</p>
+                                        {% endif %}
 
                                             <span
                                                 class="muted"
@@ -1443,12 +1475,22 @@
                         Version {{ latest_version.version_number }}
                     </strong>
 
+                    <br>
+
+                    OCR Status:
+                    <strong id="ocr-status-{{ document.pk }}">
+                        {{ latest_version.get_ocr_status_display }}
+                    </strong>
+
                 </div>
 
 
                 {% if latest_version.extracted_text %}
 
-                    <div class="extracted-text">
+                    <div
+                        class="extracted-text"
+                        id="extracted-text-{{ document.pk }}"
+                    >
 
                         {{ latest_version.extracted_text }}
 
@@ -1456,7 +1498,10 @@
 
                 {% else %}
 
-                    <div class="empty">
+                    <div
+                        class="empty"
+                        id="extracted-text-{{ document.pk }}"
+                    >
 
                         No text could be extracted from
                         this document version.
@@ -1478,6 +1523,47 @@
         {% endif %}
 
     </div>
+
+    {% if ocr_polling %}
+        <script>
+            (function () {
+                const statusElement = document.getElementById(
+                    "ocr-status-{{ document.pk }}"
+                );
+                const textElement = document.getElementById(
+                    "extracted-text-{{ document.pk }}"
+                );
+                const statusUrl = "{% url 'document_ocr_status' document.pk %}";
+
+                function pollOcrStatus() {
+                    fetch(statusUrl, {headers: {"X-Requested-With": "XMLHttpRequest"}})
+                        .then(response => response.json())
+                        .then(data => {
+                            const labels = {
+                                PENDING: "Pending",
+                                PROCESSING: "Processing...",
+                                COMPLETED: "Completed",
+                                FAILED: "Failed"
+                            };
+                            statusElement.textContent = labels[data.status] || data.status;
+
+                            if (data.status === "COMPLETED") {
+                                textElement.textContent = data.extracted_text || "No text could be extracted from this document version.";
+                                textElement.classList.add("extracted-text");
+                                return;
+                            }
+
+                            if (data.status !== "FAILED") {
+                                window.setTimeout(pollOcrStatus, 3000);
+                            }
+                        })
+                        .catch(() => window.setTimeout(pollOcrStatus, 5000));
+                }
+
+                pollOcrStatus();
+            })();
+        </script>
+    {% endif %}
 
 
 

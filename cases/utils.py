@@ -61,21 +61,15 @@ def load_public_key(public_key):
 # CREATE DIGITAL SIGNATURE
 # ============================================================
 
-def create_signature(file, private_key):
+def create_signature(payload, private_key):
 
     private_key = load_private_key(
         private_key
     )
 
-    file.seek(0)
-
-    file_data = file.read()
-
-    file.seek(0)
-
     signature = private_key.sign(
 
-        file_data,
+        payload,
 
         padding.PSS(
             mgf=padding.MGF1(
@@ -92,12 +86,22 @@ def create_signature(file, private_key):
     ).decode("utf-8")
 
 
+def build_signature_payload(document_id, version_number, file_hash, user_id):
+
+    return (
+        f"DOCUMENT:{document_id}|"
+        f"VERSION:{version_number}|"
+        f"HASH:{file_hash}|"
+        f"SHO:{user_id}"
+    ).encode("utf-8")
+
+
 # ============================================================
 # VERIFY DIGITAL SIGNATURE
 # ============================================================
 
 def verify_signature(
-    file,
+    payload,
     signature,
     public_key
 ):
@@ -108,12 +112,6 @@ def verify_signature(
             public_key
         )
 
-        file.seek(0)
-
-        file_data = file.read()
-
-        file.seek(0)
-
         signature_bytes = base64.b64decode(
             signature
         )
@@ -122,7 +120,7 @@ def verify_signature(
 
             signature_bytes,
 
-            file_data,
+            payload,
 
             padding.PSS(
                 mgf=padding.MGF1(

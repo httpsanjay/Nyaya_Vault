@@ -41,16 +41,21 @@ urlpatterns = [
     ),
 
     path(
-        "documents/versions/<int:pk>/sign/",
-        views.sign_document_version,
-        name="sign_document_version"
+        "documents/<int:pk>/ocr-status/",
+        views.document_ocr_status,
+        name="document_ocr_status"
     ),
-
 
     path(
         "digital-signing/enable/",
         views.enable_digital_signing,
         name="enable_digital_signing"
+    ),
+
+    path(
+        "documents/versions/<int:pk>/sign/",
+        views.sign_document_version,
+        name="sign_document_version"
     ),
 
     path(
@@ -69,12 +74,6 @@ path(
     "documents/versions/<int:pk>/reject/",
     views.reject_document,
     name="reject_document"
-),
-
-path(
-    "documents/versions/<int:pk>/sign/",
-    views.sign_document_version,
-    name="sign_document_version",
 ),
 
 path(

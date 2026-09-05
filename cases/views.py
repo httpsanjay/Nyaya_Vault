@@ -1,5 +1,6 @@
 import hashlib
 import io
+import logging
 import os
 import zipfile
 
@@ -13,8 +14,9 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage
 from django.core.validators import validate_email
+from django.db import IntegrityError, transaction
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .filters import CaseFilter
@@ -31,13 +33,31 @@ from .models import (
     DocumentVersion,
     UserSigningKey,
 )
+from .tasks import extract_document_text
 from .utils import (
+    build_signature_payload,
     calculate_file_hash,
     create_signature,
     generate_user_keys,
     verify_signature,
 )
+from cryptography.hazmat.primitives import serialization
 
+logger = logging.getLogger(__name__)
+
+
+def queue_document_ocr(document_version_id):
+
+    try:
+        extract_document_text.delay(document_version_id)
+    except Exception:
+        logger.exception(
+            "Unable to queue OCR for DocumentVersion %s",
+            document_version_id,
+        )
+        DocumentVersion.objects.filter(pk=document_version_id).update(
+            ocr_status=DocumentVersion.OCR_FAILED,
+        )
 
 # =========================================================
 # CASES
@@ -713,6 +733,12 @@ def document_upload_version(request, pk):
 
             version.save()
 
+            transaction.on_commit(
+                lambda version_id=version.pk: queue_document_ocr(
+                    version_id
+                )
+            )
+
             create_audit_log(
                 request=request,
                 action="DOCUMENT_VERSION_UPLOADED",
@@ -753,6 +779,11 @@ def document_detail(request, pk):
     )
 
     versions = document.versions.all()
+    latest_version = versions.first()
+    signing_key_enabled = (
+        request.user.role == "SHO"
+        and UserSigningKey.objects.filter(user=request.user).exists()
+    )
 
     return render(
         request,
@@ -760,8 +791,30 @@ def document_detail(request, pk):
         {
             "document": document,
             "versions": versions,
+            "latest_version": latest_version,
+            "ocr_polling": latest_version is not None and latest_version.ocr_status in [
+                DocumentVersion.OCR_PENDING,
+                DocumentVersion.OCR_PROCESSING,
+            ],
+            "signing_key_enabled": signing_key_enabled,
         }
     )
+
+
+@login_required
+def document_ocr_status(request, pk):
+
+    document = get_object_or_404(Document, pk=pk)
+    version = document.versions.first()
+
+    if version is None:
+        return JsonResponse({"status": "EMPTY"})
+
+    return JsonResponse({
+        "status": version.ocr_status,
+        "extracted_text": version.extracted_text,
+        "version_number": version.version_number,
+    })
 
 
 # =========================================================
@@ -772,33 +825,71 @@ def document_detail(request, pk):
 def enable_digital_signing(request):
 
     if request.method != "POST":
-
         return redirect("case_list")
 
-    if hasattr(request.user, "signing_key"):
+    document_pk = request.POST.get("document_pk")
+
+    def return_destination():
+        if document_pk:
+            return redirect("document_detail", pk=document_pk)
+        return redirect("case_list")
+
+    # -----------------------------------------
+    # ONLY SHO CAN ENABLE DIGITAL SIGNING
+    # -----------------------------------------
+
+    if request.user.role != "SHO":
+
+        messages.error(
+            request,
+            "Only the SHO can enable digital signing."
+        )
+
+        return return_destination()
+
+    # -----------------------------------------
+    # CHECK EXISTING KEY
+    # -----------------------------------------
+
+    if UserSigningKey.objects.filter(user=request.user).exists():
 
         messages.info(
             request,
             "Digital signing is already enabled."
         )
 
-        return redirect("case_list")
+        return return_destination()
+
+    # -----------------------------------------
+    # GENERATE KEY PAIR
+    # -----------------------------------------
 
     private_key, public_key = generate_user_keys()
 
-    UserSigningKey.objects.create(
-        user=request.user,
-        private_key=private_key,
-        public_key=public_key
-    )
+    # -----------------------------------------
+    # STORE KEY PAIR
+    # -----------------------------------------
+
+    try:
+        with transaction.atomic():
+            UserSigningKey.objects.create(
+                user=request.user,
+                private_key=private_key,
+                public_key=public_key
+            )
+    except IntegrityError:
+        messages.info(
+            request,
+            "Digital signing is already enabled."
+        )
+        return return_destination()
 
     messages.success(
         request,
         "Digital signing has been enabled."
     )
 
-    return redirect("case_list")
-
+    return return_destination()
 
 # =========================================================
 # DIGITAL SIGNING
@@ -807,99 +898,106 @@ def enable_digital_signing(request):
 @login_required
 def sign_document_version(request, pk):
 
-    version = get_object_or_404(
-        DocumentVersion,
-        pk=pk
-    )
+    version = get_object_or_404(DocumentVersion, pk=pk)
+    document = version.document
 
-    # Only POST
     if request.method != "POST":
-
-        return redirect(
-            "document_detail",
-            pk=version.document.pk
-        )
-
-    # -----------------------------------------
-    # ONLY SHO CAN SIGN
-    # -----------------------------------------
+        return redirect("document_detail", pk=document.pk)
 
     if request.user.role != "SHO":
-
         messages.error(
             request,
             "Only the SHO can digitally sign documents."
         )
 
-        return redirect(
-            "document_detail",
-            pk=version.document.pk
-        )
-
-    # -----------------------------------------
-    # MUST BE APPROVED
-    # -----------------------------------------
+        return redirect("document_detail", pk=document.pk)
 
     if version.status != "APPROVED":
-
         messages.error(
             request,
-            "Only approved documents can be digitally signed."
+            f"Only approved documents can be digitally signed. "
+            f"Current status: {version.status}"
         )
 
-        return redirect(
-            "document_detail",
-            pk=version.document.pk
+        return redirect("document_detail", pk=document.pk)
+
+    try:
+        signing_key = request.user.signing_key
+
+    except UserSigningKey.DoesNotExist:
+        messages.error(
+            request,
+            "Digital signing is not enabled for your account."
         )
 
-    # -----------------------------------------
-    # CALCULATE REAL FILE HASH
-    # -----------------------------------------
+        return redirect("document_detail", pk=document.pk)
 
-    sha256 = hashlib.sha256()
+    try:
+        version.file.open("rb")
+        file_hash = calculate_file_hash(version.file)
+    except (OSError, ValueError):
+        logger.exception(
+            "Unable to read file for document version %s",
+            version.pk,
+        )
+        messages.error(
+            request,
+            "The document file could not be read for signing."
+        )
+        return redirect("document_detail", pk=document.pk)
+    finally:
+        version.file.close()
 
-    version.file.open("rb")
-
-    for chunk in iter(
-        lambda: version.file.read(8192),
-        b""
-    ):
-
-        sha256.update(chunk)
-
-    version.file.close()
-
-    file_hash = sha256.hexdigest()
-
-    # -----------------------------------------
-    # CREATE SIGNATURE
-    # -----------------------------------------
-
-    signature_data = (
-        f"{file_hash}"
-        f"|SHO:{request.user.pk}"
-        f"|VERSION:{version.version_number}"
+    payload = build_signature_payload(
+        document.pk,
+        version.version_number,
+        file_hash,
+        request.user.pk,
     )
 
-    digital_signature = hashlib.sha256(
-        signature_data.encode()
-    ).hexdigest()
-
-    # -----------------------------------------
-    # SAVE
-    # -----------------------------------------
+    try:
+        digital_signature = create_signature(
+            payload,
+            signing_key.private_key,
+        )
+    except (ValueError, TypeError, OSError):
+        logger.exception(
+            "Digital signature creation failed for document version %s",
+            version.pk,
+        )
+        messages.error(
+            request,
+            "Digital signature creation failed. Please contact an administrator."
+        )
+        return redirect("document_detail", pk=document.pk)
 
     version.file_hash = file_hash
-
     version.digital_signature = digital_signature
-
     version.signed_by = request.user
-
     version.signed_at = timezone.now()
-
     version.status = "SIGNED"
 
-    version.save()
+    version.save(update_fields=[
+        "file_hash",
+        "digital_signature",
+        "signed_by",
+        "signed_at",
+        "status",
+    ])
+
+    create_audit_log(
+        request=request,
+        action="DOCUMENT_SIGNED",
+        description=(
+            f"Document '{document.name}' "
+            f"version {version.version_number} "
+            f"was digitally signed by SHO "
+            f"{request.user.username}."
+        ),
+        case=document.case,
+        document=document,
+        document_version=version,
+    )
 
     messages.success(
         request,
@@ -908,7 +1006,7 @@ def sign_document_version(request, pk):
 
     return redirect(
         "document_detail",
-        pk=version.document.pk
+        pk=document.pk
     )
 
 
@@ -963,19 +1061,25 @@ def verify_document_version(request, pk):
         and version.digital_signature
     ):
 
-        signature_data = (
-            f"{version.file_hash}"
-            f"|SHO:{version.signed_by.pk}"
-            f"|VERSION:{version.version_number}"
-        )
-
-        expected_signature = hashlib.sha256(
-            signature_data.encode()
-        ).hexdigest()
-
-        signature_valid = (
-            expected_signature == version.digital_signature
-        )
+        try:
+            payload = build_signature_payload(
+                version.document.pk,
+                version.version_number,
+                version.file_hash,
+                version.signed_by.pk,
+            )
+            signing_key = version.signed_by.signing_key
+            signature_valid = verify_signature(
+                payload,
+                version.digital_signature,
+                signing_key.public_key,
+            )
+        except (UserSigningKey.DoesNotExist, ValueError, TypeError, OSError):
+            logger.exception(
+                "Digital signature verification failed for document version %s",
+                version.pk,
+            )
+            signature_valid = False
 
     # -----------------------------------------
     # FINAL VERIFICATION
@@ -1224,6 +1328,8 @@ def reject_document(request, pk):
         "document_detail",
         pk=version.document.pk
     )
+
+
 @login_required
 def assign_case(request, pk):
 
@@ -1307,4 +1413,4 @@ def assign_case(request, pk):
         )
 
 
-    
+
