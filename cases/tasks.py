@@ -17,7 +17,8 @@ def extract_document_text(document_version_id):
     try:
         version = DocumentVersion.objects.get(pk=document_version_id)
         version.ocr_status = DocumentVersion.OCR_PROCESSING
-        version.save(update_fields=["ocr_status"])
+        version.ocr_error = ""
+        version.save(update_fields=["ocr_status", "ocr_error"])
 
         if not version.file:
             raise ValueError("Document version has no uploaded file")
@@ -40,17 +41,42 @@ def extract_document_text(document_version_id):
             if temporary_path:
                 os.unlink(temporary_path)
 
+        logger.info(
+            "OCR extracted %d characters for DocumentVersion %s",
+            len(text),
+            document_version_id,
+        )
+
         version.extracted_text = text
-        version.ocr_status = DocumentVersion.OCR_COMPLETED
-        version.save(update_fields=["extracted_text", "ocr_status"])
+
+        if text.strip():
+            version.ocr_status = DocumentVersion.OCR_COMPLETED
+            version.ocr_error = ""
+        else:
+            version.ocr_status = DocumentVersion.OCR_FAILED
+            version.ocr_error = "OCR returned empty text."
+
+        version.save(
+            update_fields=[
+                "extracted_text",
+                "ocr_status",
+                "ocr_error",
+            ]
+        )
+
+        logger.info(
+            "OCR text saved successfully for DocumentVersion %s",
+            document_version_id,
+        )
         return text
 
-    except Exception:
+    except Exception as exc:
         logger.exception(
             "OCR extraction failed for DocumentVersion %s",
             document_version_id,
         )
         DocumentVersion.objects.filter(pk=document_version_id).update(
             ocr_status=DocumentVersion.OCR_FAILED,
+            ocr_error=str(exc),
         )
         raise

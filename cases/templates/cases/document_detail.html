@@ -1392,9 +1392,8 @@
                                     {% if version.file %}
 
                                         <a
-                                            href="{{ version.file.url }}"
+                                            href="{% url 'document_version_view' version.pk %}"
                                             class="download"
-                                            target="_blank"
                                         >
                                             View / Download
                                         </a>
@@ -1485,7 +1484,7 @@
                 </div>
 
 
-                {% if latest_version.extracted_text %}
+                {% if latest_version.ocr_status == 'COMPLETED' and latest_version.extracted_text %}
 
                     <div
                         class="extracted-text"
@@ -1496,6 +1495,17 @@
 
                     </div>
 
+                {% elif latest_version.ocr_status == 'FAILED' %}
+
+                    <div
+                        class="empty"
+                        id="extracted-text-{{ document.pk }}"
+                    >
+
+                        OCR failed{% if latest_version.ocr_error %}: {{ latest_version.ocr_error }}{% endif %}
+
+                    </div>
+
                 {% else %}
 
                     <div
@@ -1503,8 +1513,7 @@
                         id="extracted-text-{{ document.pk }}"
                     >
 
-                        No text could be extracted from
-                        this document version.
+                        OCR is still processing this document version.
 
                     </div>
 
@@ -1553,9 +1562,12 @@
                                 return;
                             }
 
-                            if (data.status !== "FAILED") {
-                                window.setTimeout(pollOcrStatus, 3000);
+                            if (data.status === "FAILED") {
+                                textElement.textContent = data.error || "OCR failed.";
+                                return;
                             }
+
+                            window.setTimeout(pollOcrStatus, 3000);
                         })
                         .catch(() => window.setTimeout(pollOcrStatus, 5000));
                 }

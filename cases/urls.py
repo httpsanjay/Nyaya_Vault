@@ -47,6 +47,12 @@ urlpatterns = [
     ),
 
     path(
+        "documents/versions/<int:pk>/view/",
+        views.document_version_view,
+        name="document_version_view"
+    ),
+
+    path(
         "digital-signing/enable/",
         views.enable_digital_signing,
         name="enable_digital_signing"

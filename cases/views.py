@@ -1,6 +1,7 @@
 import hashlib
 import io
 import logging
+import mimetypes
 import os
 import zipfile
 
@@ -802,6 +803,162 @@ def document_detail(request, pk):
 
 
 @login_required
+def document_version_view(request, pk):
+
+    versions = DocumentVersion.objects.select_related(
+        "document",
+        "document__case",
+        "uploaded_by",
+        "reviewed_by",
+        "signed_by",
+    )
+
+    if request.user.role == "IO":
+        versions = versions.filter(
+            Q(document__case__created_by=request.user) |
+            Q(document__case__assigned_to=request.user) |
+            Q(document__case__assigned_officers=request.user)
+        ).distinct()
+
+    version = get_object_or_404(
+        versions,
+        pk=pk,
+    )
+    document = version.document
+
+    integrity_valid = None
+    current_hash = ""
+
+    if (
+        request.method == "POST"
+        and request.POST.get("action") == "verify_integrity"
+    ):
+        try:
+            version.file.open("rb")
+            current_hash = calculate_file_hash(version.file)
+            integrity_valid = bool(
+                version.file_hash
+                and current_hash == version.file_hash
+            )
+        except (OSError, ValueError):
+            logger.exception(
+                "Unable to verify file integrity for DocumentVersion %s",
+                version.pk,
+            )
+            integrity_valid = False
+        finally:
+            version.file.close()
+
+    signature_valid = False
+
+    if (
+        version.status == "SIGNED"
+        and version.digital_signature
+        and version.file_hash
+        and version.signed_by
+    ):
+        try:
+            payload = build_signature_payload(
+                document.pk,
+                version.version_number,
+                version.file_hash,
+                version.signed_by.pk,
+            )
+            signature_valid = verify_signature(
+                payload,
+                version.digital_signature,
+                version.signed_by.signing_key.public_key,
+            )
+        except (
+            UserSigningKey.DoesNotExist,
+            ValueError,
+            TypeError,
+            OSError,
+        ):
+            logger.exception(
+                "Digital signature verification failed for DocumentVersion %s",
+                version.pk,
+            )
+
+    audit_events = list(
+        version.audit_logs.select_related("user").all()
+    )
+
+    timeline = [{
+        "timestamp": version.created_at,
+        "label": "Version Created",
+        "user": version.uploaded_by,
+    }]
+
+    for audit_event in audit_events:
+        timeline.append({
+            "timestamp": audit_event.timestamp,
+            "label": audit_event.get_action_display(),
+            "user": audit_event.user,
+            "description": audit_event.description,
+        })
+
+    if version.reviewed_by and not any(
+        event.action in [
+            "DOCUMENT_APPROVED",
+            "DOCUMENT_REJECTED",
+        ]
+        for event in audit_events
+    ):
+        timeline.append({
+            "timestamp": version.reviewed_at,
+            "label": "Document Reviewed",
+            "user": version.reviewed_by,
+        })
+
+    if version.signed_by and not any(
+        event.action == "DOCUMENT_SIGNED"
+        for event in audit_events
+    ):
+        timeline.append({
+            "timestamp": version.signed_at,
+            "label": "Document Digitally Signed",
+            "user": version.signed_by,
+        })
+
+    timeline.sort(
+        key=lambda event: event["timestamp"],
+        reverse=True,
+    )
+
+    content_type = (
+        mimetypes.guess_type(version.file.name)[0]
+        if version.file
+        else ""
+    )
+
+    if content_type == "application/pdf":
+        preview_type = "pdf"
+    elif content_type and content_type.startswith("image/"):
+        preview_type = "image"
+    else:
+        preview_type = "unsupported"
+
+    filename = os.path.basename(version.file.name) if version.file else ""
+
+    return render(
+        request,
+        "cases/document_version_view.html",
+        {
+            "document": document,
+            "version": version,
+            "filename": filename,
+            "content_type": content_type,
+            "preview_type": preview_type,
+            "integrity_valid": integrity_valid,
+            "current_hash": current_hash,
+            "signature_valid": signature_valid,
+            "timeline": timeline,
+        },
+    )
+
+
+@login_required
 def document_ocr_status(request, pk):
 
     document = get_object_or_404(Document, pk=pk)
@@ -812,8 +969,11 @@ def document_ocr_status(request, pk):
 
     return JsonResponse({
         "status": version.ocr_status,
+        "version_id": version.pk,
+        "has_text": bool(version.extracted_text.strip()),
         "extracted_text": version.extracted_text,
         "version_number": version.version_number,
+        "error": version.ocr_error,
     })
 
 

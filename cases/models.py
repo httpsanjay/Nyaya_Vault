@@ -198,6 +198,10 @@ class DocumentVersion(models.Model):
         default=OCR_PENDING,
     )
 
+    ocr_error = models.TextField(
+        blank=True
+    )
+
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
