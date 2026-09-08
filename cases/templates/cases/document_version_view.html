@@ -281,11 +281,18 @@
                         <div class="info-grid section-gap">
                             <div class="info"><div class="label">Signed By</div><div class="value">{{ version.signed_by.get_full_name|default:version.signed_by.username }}</div></div>
                             <div class="info"><div class="label">Signed At</div><div class="value">{{ version.signed_at|date:"d F Y, h:i A" }}</div></div>
+                            <div class="info"><div class="label">Police Station</div><div class="value">{{ version.signed_by.police_station|default:"Not configured" }}</div></div>
+                            <div class="info"><div class="label">Signature Algorithm</div><div class="value">RSA-4096 / RSA-PSS / SHA-256</div></div>
+                            <div class="info"><div class="label">File Integrity</div><div class="value">{% if file_integrity_valid %}VERIFIED{% else %}TAMPERED{% endif %}</div></div>
                         </div>
                         <div class="label section-gap">Stored Signature</div>
                         <div class="signature">{{ version.digital_signature }}</div>
                     {% else %}
                         <div class="status-result warning">⚠ Not Digitally Signed</div>
+                        <div class="info-grid section-gap">
+                            <div class="info"><div class="label">Digital Signature</div><div class="value">NOT SIGNED</div></div>
+                            <div class="info"><div class="label">File Integrity</div><div class="value">{% if version.file_hash and file_integrity_valid %}VERIFIED{% else %}UNKNOWN{% endif %}</div></div>
+                        </div>
                     {% endif %}
                 </div>
 

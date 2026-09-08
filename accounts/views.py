@@ -69,6 +69,7 @@ def register_view(request):
         phone_number = request.POST.get("phone_number")
         department = request.POST.get("department")
         designation = request.POST.get("designation")
+        police_station = request.POST.get("police_station", "").strip()
         role = request.POST.get("role")
 
         password1 = request.POST.get("password1")
@@ -121,6 +122,7 @@ def register_view(request):
             phone_number=phone_number,
             department=department,
             designation=designation,
+            police_station=police_station,
             role=role
         )
 
@@ -161,10 +163,11 @@ def dashboard(request):
         user_cases = Case.objects.all()
 
     elif user.role == "IO":
-        # IO sees:
-        # 1. Cases created by them
-        # 2. Cases assigned directly to them
-        # 3. Cases where they are a collaborating officer
+
+
+
+
+
         user_cases = Case.objects.filter(
             Q(created_by=user) |
             Q(assigned_to=user) |
@@ -227,14 +230,15 @@ def dashboard(request):
     else:
 
         assigned_cases = Case.objects.filter(
-            Q(assigned_to=user) |
-            Q(assigned_officers=user)
-        ).distinct().select_related(
-            "created_by",
-            "assigned_to"
-        ).prefetch_related(
-            "assigned_officers"
-        ).order_by("-updated_at")[:8]
+    Q(created_by=request.user)
+    | Q(assigned_to=request.user)
+    | Q(assigned_officers=request.user)
+).select_related(
+    "created_by",
+    "assigned_to",
+).prefetch_related(
+    "assigned_officers",
+).distinct().order_by("-updated_at")
 
 
     # =========================================================

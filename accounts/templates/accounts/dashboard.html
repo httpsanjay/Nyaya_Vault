@@ -803,118 +803,131 @@
 
 <div class="content-grid">
 
-    <!-- ================= ASSIGNED CASES ================= -->
+<!-- ================= CASES ================= -->
 
-    <div class="card">
+<div class="card">
 
-        <div class="section-title">
-            {% if request.user.role == "SHO" %}
-                All Cases
-            {% else %}
-                My Assigned Cases
-            {% endif %}
-        </div>
-
-
-        {% for case in assigned_cases %}
-
-            <div class="case">
-
-                <div class="case-number">
-
-                    <a href="{% url 'case_detail' case.pk %}">
-                        {{ case.case_number }}
-                    </a>
-
-                </div>
+    <div class="section-title">
+        {% if request.user.role == "SHO" %}
+            All Cases
+        {% elif request.user.role == "IO" %}
+            My Cases
+        {% else %}
+            My Assigned Cases
+        {% endif %}
+    </div>
 
 
-                <div class="case-title">
+    {% for case in assigned_cases %}
 
-                    {{ case.title }}
+        <div class="case">
 
-                </div>
-
-
-                <div class="case-meta">
-
-                    {% if case.case_type == "OTHER" %}
-
-                        {{ case.other_case_type }}
-
-                    {% else %}
-
-                        {{ case.get_case_type_display }}
-
-                    {% endif %}
-
-                    &nbsp;•&nbsp;
-
-                    Updated {{ case.updated_at|date:"M d, Y" }}
-
-                </div>
+            <div class="case-number">
+                <a href="{% url 'case_detail' case.pk %}">
+                    {{ case.case_number }}
+                </a>
+            </div>
 
 
-                <!-- ASSIGNMENT INFORMATION -->
-
-                <div class="assignment">
-
-                    {% if case.assigned_to == request.user %}
-
-                        <span class="assignment-badge primary">
-                            Directly Assigned
-                        </span>
-
-                    {% elif request.user in case.assigned_officers.all %}
-
-                        <span class="assignment-badge">
-                            Collaborating Officer
-                        </span>
-
-                    {% endif %}
-
-                </div>
+            <div class="case-title">
+                {{ case.title }}
+            </div>
 
 
-                <div class="status
-                    {% if case.status == 'PENDING' %}
-                        pending
-                    {% elif case.status == 'CLOSED' %}
-                        closed
-                    {% endif %}
-                ">
+            <div class="case-meta">
 
-                    {{ case.get_status_display }}
+                {% if case.case_type == "OTHER" %}
 
-                </div>
+                    {{ case.other_case_type }}
+
+                {% else %}
+
+                    {{ case.get_case_type_display }}
+
+                {% endif %}
+
+                &nbsp;•&nbsp;
+
+                Updated {{ case.updated_at|date:"M d, Y" }}
 
             </div>
 
 
-        {% empty %}
+            <!-- ASSIGNMENT INFORMATION -->
 
-            <div class="empty">
+            <div class="assignment">
 
-                <p>
-                    No cases have been assigned to you.
-                </p>
+                {% if case.created_by == request.user %}
 
-                {% if request.user.role == "IO" %}
+                    <span class="assignment-badge primary">
+                        Created by You
+                    </span>
 
-                    <a
-                        href="{% url 'case_create' %}"
-                        class="create-btn"
-                    >
-                        Create New Case
-                    </a>
+                {% elif case.assigned_to == request.user %}
+
+                    <span class="assignment-badge primary">
+                        Directly Assigned
+                    </span>
+
+                {% elif request.user in case.assigned_officers.all %}
+
+                    <span class="assignment-badge">
+                        Collaborating Officer
+                    </span>
 
                 {% endif %}
 
             </div>
 
-        {% endfor %}
 
-    </div>
+            <!-- STATUS -->
+
+            <div class="status
+                {% if case.status == 'PENDING' %}
+                    pending
+                {% elif case.status == 'CLOSED' %}
+                    closed
+                {% endif %}
+            ">
+
+                {{ case.get_status_display }}
+
+            </div>
+
+        </div>
+
+
+    {% empty %}
+
+        <div class="empty">
+
+            <p>
+                {% if request.user.role == "IO" %}
+                    No cases found.
+                {% elif request.user.role == "SHO" %}
+                    No cases found.
+                {% else %}
+                    No cases have been assigned to you.
+                {% endif %}
+            </p>
+
+
+            {% if request.user.role == "IO" %}
+
+                <a
+                    href="{% url 'case_create' %}"
+                    class="create-btn"
+                >
+                    Create New Case
+                </a>
+
+            {% endif %}
+
+        </div>
+
+    {% endfor %}
+
+</div>
 
 
     <!-- ================= QUICK ACTIONS ================= -->

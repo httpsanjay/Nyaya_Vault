@@ -1,6 +1,7 @@
 import hashlib
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 import os
 
@@ -93,6 +94,16 @@ class Case(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="created_cases"
+    )
+
+    police_station = models.CharField(max_length=150, blank=True)
+
+    station = models.ForeignKey(
+        "PoliceStation",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="cases",
     )
 
     created_at = models.DateTimeField(
@@ -272,7 +283,18 @@ class DocumentVersion(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        
+        if self.pk:
+            previous = type(self).objects.filter(pk=self.pk).only(
+                "status", "file"
+            ).first()
+            if (
+                previous
+                and previous.status == "SIGNED"
+                and previous.file.name != self.file.name
+            ):
+                raise ValidationError(
+                    "A digitally signed document version is immutable."
+                )
 
         # Save first so the uploaded file exists on disk/storage
         super().save(*args, **kwargs)
@@ -315,6 +337,26 @@ class UserSigningKey(models.Model):
         auto_now_add=True
     )
 
+    def save(self, *args, **kwargs):
+        if self.user_id and self.user.role != "SHO":
+            raise ValidationError(
+                "Only SHO users can have a digital signing key."
+            )
+        return super().save(*args, **kwargs)
+
     def __str__(self):
 
         return f"Signing Key - {self.user.username}"
+
+
+class PoliceStation(models.Model):
+
+    name = models.CharField(max_length=150, unique=True)
+    code = models.CharField(max_length=50, unique=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"

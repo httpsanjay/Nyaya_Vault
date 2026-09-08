@@ -32,6 +32,7 @@ from .models import (
     Case,
     Document,
     DocumentVersion,
+    PoliceStation,
     UserSigningKey,
 )
 from .tasks import extract_document_text
@@ -39,10 +40,9 @@ from .utils import (
     build_signature_payload,
     calculate_file_hash,
     create_signature,
-    generate_user_keys,
     verify_signature,
+    create_signing_key_for_sho,
 )
-from cryptography.hazmat.primitives import serialization
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,13 @@ def case_list(request):
         # Other roles
         # Keep your existing authorization here if you already
         # have more specific role restrictions.
-        cases = Case.objects.all()
+        if user.role == "SHO":
+            cases = Case.objects.filter(
+                Q(station=user.station) |
+                Q(station__isnull=True, police_station=user.police_station)
+            ).distinct()
+        else:
+            cases = Case.objects.all()
 
     # =========================================================
     # SEARCH
@@ -187,6 +193,8 @@ def case_create(request):
             case = form.save(commit=False)
 
             case.created_by = request.user
+            case.police_station = request.user.police_station
+            case.station = request.user.station
 
             case.save()
 
@@ -240,6 +248,16 @@ def case_detail(request, pk):
                 Q(assigned_officers=user)
             ).distinct(),
             pk=pk
+        )
+
+    elif user.role == "SHO":
+
+        case = get_object_or_404(
+            Case.objects.filter(
+                Q(station=user.station) |
+                Q(station__isnull=True, police_station=user.police_station)
+            ).distinct(),
+            pk=pk,
         )
 
     else:
@@ -829,13 +847,21 @@ def document_version_view(request, pk):
     integrity_valid = None
     current_hash = ""
 
+    try:
+        if version.file:
+            version.file.open("rb")
+            current_hash = calculate_file_hash(version.file)
+    except (OSError, ValueError):
+        current_hash = ""
+    finally:
+        if version.file:
+            version.file.close()
+
     if (
         request.method == "POST"
         and request.POST.get("action") == "verify_integrity"
     ):
         try:
-            version.file.open("rb")
-            current_hash = calculate_file_hash(version.file)
             integrity_valid = bool(
                 version.file_hash
                 and current_hash == version.file_hash
@@ -856,12 +882,13 @@ def document_version_view(request, pk):
         and version.digital_signature
         and version.file_hash
         and version.signed_by
+        and version.signed_by.role == "SHO"
     ):
         try:
             payload = build_signature_payload(
                 document.pk,
                 version.version_number,
-                version.file_hash,
+                current_hash,
                 version.signed_by.pk,
             )
             signature_valid = verify_signature(
@@ -874,6 +901,7 @@ def document_version_view(request, pk):
             ValueError,
             TypeError,
             OSError,
+            AttributeError,
         ):
             logger.exception(
                 "Digital signature verification failed for DocumentVersion %s",
@@ -883,12 +911,20 @@ def document_version_view(request, pk):
     audit_events = list(
         version.audit_logs.select_related("user").all()
     )
+    timeline = []
+
 
     timeline = [{
         "timestamp": version.created_at,
         "label": "Version Created",
         "user": version.uploaded_by,
     }]
+    if version.created_at is not None:
+        timeline.append({
+            "timestamp": version.created_at,
+            "label": "Version Created",
+            "user": version.uploaded_by,
+        })
 
     for audit_event in audit_events:
         timeline.append({
@@ -898,12 +934,16 @@ def document_version_view(request, pk):
             "description": audit_event.description,
         })
 
-    if version.reviewed_by and not any(
-        event.action in [
-            "DOCUMENT_APPROVED",
-            "DOCUMENT_REJECTED",
-        ]
-        for event in audit_events
+    if (
+        version.reviewed_by
+        and version.reviewed_at is not None
+        and not any(
+            event.action in [
+                "DOCUMENT_APPROVED",
+                "DOCUMENT_REJECTED",
+            ]
+            for event in audit_events
+        )
     ):
         timeline.append({
             "timestamp": version.reviewed_at,
@@ -911,16 +951,19 @@ def document_version_view(request, pk):
             "user": version.reviewed_by,
         })
 
-    if version.signed_by and not any(
-        event.action == "DOCUMENT_SIGNED"
-        for event in audit_events
+    if (
+        version.signed_by
+        and version.signed_at is not None
+        and not any(
+            event.action == "DOCUMENT_SIGNED"
+            for event in audit_events
+        )
     ):
         timeline.append({
             "timestamp": version.signed_at,
             "label": "Document Digitally Signed",
             "user": version.signed_by,
         })
-
     timeline.sort(
         key=lambda event: event["timestamp"],
         reverse=True,
@@ -951,6 +994,9 @@ def document_version_view(request, pk):
             "content_type": content_type,
             "preview_type": preview_type,
             "integrity_valid": integrity_valid,
+            "file_integrity_valid": bool(
+                version.file_hash and current_hash == version.file_hash
+            ),
             "current_hash": current_hash,
             "signature_valid": signature_valid,
             "timeline": timeline,
@@ -1020,24 +1066,22 @@ def enable_digital_signing(request):
 
         return return_destination()
 
-    # -----------------------------------------
-    # GENERATE KEY PAIR
-    # -----------------------------------------
-
-    private_key, public_key = generate_user_keys()
-
-    # -----------------------------------------
-    # STORE KEY PAIR
-    # -----------------------------------------
-
     try:
-        with transaction.atomic():
-            UserSigningKey.objects.create(
-                user=request.user,
-                private_key=private_key,
-                public_key=public_key
-            )
+        _, created = create_signing_key_for_sho(request.user)
+    except ValueError:
+        messages.error(
+            request,
+            "Digital signing is not configured. Please contact an administrator."
+        )
+        return return_destination()
     except IntegrityError:
+        messages.info(
+            request,
+            "Digital signing is already enabled."
+        )
+        return return_destination()
+
+    if not created:
         messages.info(
             request,
             "Digital signing is already enabled."
@@ -1072,6 +1116,25 @@ def sign_document_version(request, pk):
 
         return redirect("document_detail", pk=document.pk)
 
+    case_station = document.case.police_station
+    user_station = request.user.police_station
+    same_station = (
+        document.case.station_id
+        and request.user.station_id
+        and document.case.station_id == request.user.station_id
+    ) or (
+        not document.case.station_id
+        and not request.user.station_id
+        and case_station
+        and case_station == user_station
+    )
+    if not same_station:
+        messages.error(
+            request,
+            "You are not authorized to sign documents from this police station."
+        )
+        return redirect("document_detail", pk=document.pk)
+
     if version.status != "APPROVED":
         messages.error(
             request,
@@ -1093,6 +1156,8 @@ def sign_document_version(request, pk):
         return redirect("document_detail", pk=document.pk)
 
     try:
+        if not version.file:
+            raise OSError("Document file is missing.")
         version.file.open("rb")
         file_hash = calculate_file_hash(version.file)
     except (OSError, ValueError):
@@ -1131,19 +1196,38 @@ def sign_document_version(request, pk):
         )
         return redirect("document_detail", pk=document.pk)
 
-    version.file_hash = file_hash
-    version.digital_signature = digital_signature
-    version.signed_by = request.user
-    version.signed_at = timezone.now()
-    version.status = "SIGNED"
-
-    version.save(update_fields=[
-        "file_hash",
-        "digital_signature",
-        "signed_by",
-        "signed_at",
-        "status",
-    ])
+    try:
+        with transaction.atomic():
+            locked_version = DocumentVersion.objects.select_for_update().get(
+                pk=version.pk
+            )
+            if locked_version.status != "APPROVED":
+                messages.error(
+                    request,
+                    "Only approved documents can be digitally signed."
+                )
+                return redirect("document_detail", pk=document.pk)
+            locked_version.file_hash = file_hash
+            locked_version.digital_signature = digital_signature
+            locked_version.signed_by = request.user
+            locked_version.signed_at = timezone.now()
+            locked_version.status = "SIGNED"
+            locked_version.save(update_fields=[
+                "file_hash",
+                "digital_signature",
+                "signed_by",
+                "signed_at",
+                "status",
+            ])
+    except (OSError, ValueError, TypeError):
+        logger.exception(
+            "Unable to persist signature for document version %s", version.pk
+        )
+        messages.error(
+            request,
+            "The document could not be signed. Please try again."
+        )
+        return redirect("document_detail", pk=document.pk)
 
     create_audit_log(
         request=request,
@@ -1186,20 +1270,16 @@ def verify_document_version(request, pk):
     # Calculate SHA-256 of CURRENT FILE
     # -----------------------------------------
 
-    sha256 = hashlib.sha256()
-
-    version.file.open("rb")
-
-    for chunk in iter(
-        lambda: version.file.read(8192),
-        b""
-    ):
-
-        sha256.update(chunk)
-
-    version.file.close()
-
-    current_hash = sha256.hexdigest()
+    current_hash = ""
+    try:
+        if version.file:
+            version.file.open("rb")
+            current_hash = calculate_file_hash(version.file)
+    except (OSError, ValueError):
+        current_hash = ""
+    finally:
+        if version.file:
+            version.file.close()
 
     # -----------------------------------------
     # Compare with ORIGINAL STORED HASH
@@ -1219,13 +1299,15 @@ def verify_document_version(request, pk):
     if (
         version.status == "SIGNED"
         and version.digital_signature
+        and version.signed_by
+        and version.signed_by.role == "SHO"
     ):
 
         try:
             payload = build_signature_payload(
                 version.document.pk,
                 version.version_number,
-                version.file_hash,
+                current_hash,
                 version.signed_by.pk,
             )
             signing_key = version.signed_by.signing_key
@@ -1234,7 +1316,13 @@ def verify_document_version(request, pk):
                 version.digital_signature,
                 signing_key.public_key,
             )
-        except (UserSigningKey.DoesNotExist, ValueError, TypeError, OSError):
+        except (
+            UserSigningKey.DoesNotExist,
+            ValueError,
+            TypeError,
+            OSError,
+            AttributeError,
+        ):
             logger.exception(
                 "Digital signature verification failed for document version %s",
                 version.pk,
