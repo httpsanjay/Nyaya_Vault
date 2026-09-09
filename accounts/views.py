@@ -4,7 +4,10 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 from django.utils import timezone
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 
+from cases.models import Case, Document, DocumentVersion
 from cases.models import Case, Document, DocumentVersion
 from cases.models import DocumentShare
 from .forms import RegistrationForm
@@ -79,11 +82,6 @@ def logout_view(request):
     logout(request)
 
     return redirect("login")
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-
-from cases.models import Case, Document, DocumentVersion
 
 
 @login_required
