@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: nyaya-vault
+    runtime: python
+    plan: free
+    branch: main
+    buildCommand: "./build.sh"
+    startCommand: "python -m gunicorn nyaya_vault.asgi:application -k uvicorn.workers.UvicornWorker"
+
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: DEBUG
+        value: "False"
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nyaya-vault-db
+          property: connectionString
+
+      - key: SIGNING_KEY_ENCRYPTION_PASSWORD
+        sync: false
+
+      - key: PYTHON_VERSION
+        value: "3.13.7"
+
+databases:
+  - name: nyaya-vault-db
+    plan: free
