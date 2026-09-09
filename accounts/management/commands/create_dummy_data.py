@@ -3,8 +3,19 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from accounts.models import User
-from cases.models import Case, Document, DocumentVersion, PoliceStation
-from cases.utils import create_signing_key_for_sho, load_private_key
+from cases.models import (
+    Case,
+    Document,
+    DocumentVersion,
+    PoliceStation,
+)
+from cases.utils import (
+    create_signing_key_for_sho,
+    load_private_key,
+)
+
+
+PASSWORD = "Test@12345"
 
 
 STATIONS = [
@@ -14,141 +25,622 @@ STATIONS = [
     ("Bengaluru City Police Station", "BENGALURU_CITY"),
 ]
 
-STATION_USERS = [
-    ("banaswadi", "Banaswadi Police Station", "BANASWADI"),
-    ("basavanagudi", "Basavanagudi Police Station", "BASAVANAGUDI"),
-    ("bengaluru_north", "Bengaluru North Police Station", "BENGALURU_NORTH"),
+
+POLICE_USERS = [
+    (
+        "banaswadi",
+        "Banaswadi Police Station",
+        "BANASWADI",
+    ),
+    (
+        "basavanagudi",
+        "Basavanagudi Police Station",
+        "BASAVANAGUDI",
+    ),
+    (
+        "bengaluru_north",
+        "Bengaluru North Police Station",
+        "BENGALURU_NORTH",
+    ),
 ]
 
 
 class Command(BaseCommand):
-    help = "Create the local police-station and digital-signing test dataset."
+
+    help = "Create complete dummy data for NyayaVault testing."
 
     def handle(self, *args, **options):
+
         try:
+
             with transaction.atomic():
-                stations = self._create_stations()
-                users = self._create_users(stations)
-                cases = self._create_cases(stations, users)
-                self._create_test_document(cases["CASE-BAN-001"], users["io_banaswadi"], users["sho_banaswadi"])
+
+                stations = self.create_stations()
+
+                users = self.create_users(stations)
+
+                cases = self.create_cases(
+                    stations,
+                    users,
+                )
+
+                self.create_documents(
+                    cases,
+                    users,
+                )
+
+                self.create_lawyer_and_court()
+
         except Exception as exc:
-            raise CommandError(f"Dummy data creation failed: {exc}") from exc
 
-        key_count = User.objects.filter(role="SHO", signing_key__isnull=False).count()
-        sho_count = User.objects.filter(role="SHO").count()
-        io_count = User.objects.filter(role="IO").count()
-        self.stdout.write("\n" + "=" * 50)
-        self.stdout.write("DUMMY DATA CREATED")
-        self.stdout.write("=" * 50)
-        for username, station_name, _ in STATION_USERS:
-            self.stdout.write(f"\n{station_name.upper()}")
-            self.stdout.write(f"IO:\n    username: io_{username}\n    password: Test@12345")
-            self.stdout.write(f"SHO:\n    username: sho_{username}\n    password: Test@12345\n    signing key: RSA-4096")
-        self.stdout.write("\nBENGALURU CITY POLICE STATION\n    active: yes")
-        self.stdout.write("\nADMIN:\n    username: admin\n    password: Admin@12345")
-        self.stdout.write("\nTEST CASES:\n    CASE-BAN-001\n    CASE-BAS-001")
-        self.stdout.write("\nSUMMARY")
-        self.stdout.write(f"    police stations: {PoliceStation.objects.count()}")
-        self.stdout.write(f"    IO users: {io_count}")
-        self.stdout.write(f"    SHO users: {sho_count}")
-        self.stdout.write(f"    signing keys: {key_count}")
-        self.stdout.write(f"    test cases: {Case.objects.filter(case_number__in=['CASE-BAN-001', 'CASE-BAS-001']).count()}")
-        self.stdout.write(f"    RSA-4096 key generation succeeded: {'yes' if key_count == 3 else 'no'}")
+            raise CommandError(
+                f"Dummy data creation failed: {exc}"
+            ) from exc
 
-    def _create_stations(self):
-        return {
-            name: PoliceStation.objects.update_or_create(
+        self.print_summary()
+
+    # ============================================================
+    # POLICE STATIONS
+    # ============================================================
+
+    def create_stations(self):
+
+        stations = {}
+
+        for name, code in STATIONS:
+
+            station, _ = PoliceStation.objects.update_or_create(
                 code=code,
-                defaults={"name": name, "is_active": True},
-            )[0]
-            for name, code in STATIONS
-        }
+                defaults={
+                    "name": name,
+                    "is_active": True,
+                },
+            )
 
-    def _user(self, username, role, station):
+            stations[name] = station
+
+        return stations
+
+    # ============================================================
+    # POLICE USER
+    # ============================================================
+
+    def create_police_user(
+        self,
+        username,
+        role,
+        station,
+    ):
+
         user, _ = User.objects.get_or_create(
             username=username,
             defaults={
                 "id_number": username.upper(),
-                "role": role,
-                "police_station": station.name,
-                "station": station,
-                "is_active": True,
             },
         )
+
         user.role = role
-        user.police_station = station.name
-        user.station = station
+        user.police_station = station
+        user.police_station_name = station.name
         user.is_active = True
-        user.set_password("Test@12345")
+
+        user.set_password(PASSWORD)
+
         user.save()
+
         return user
 
-    def _create_users(self, stations):
+    # ============================================================
+    # USERS
+    # ============================================================
+
+    def create_users(self, stations):
+
         users = {}
-        for username, station_name, _ in STATION_USERS:
+
+        for (
+            username,
+            station_name,
+            code,
+        ) in POLICE_USERS:
+
             station = stations[station_name]
-            users[f"io_{username}"] = self._user(f"io_{username}", "IO", station)
-            sho = self._user(f"sho_{username}", "SHO", station)
-            key, _ = create_signing_key_for_sho(sho)
-            load_private_key(key.private_key)
+
+            # -----------------------------
+            # IO
+            # -----------------------------
+
+            io = self.create_police_user(
+                username=f"io_{username}",
+                role="IO",
+                station=station,
+            )
+
+            # -----------------------------
+            # SHO
+            # -----------------------------
+
+            sho = self.create_police_user(
+                username=f"sho_{username}",
+                role="SHO",
+                station=station,
+            )
+
+            # -----------------------------
+            # SHO SIGNING KEY
+            # -----------------------------
+
+            key, created = create_signing_key_for_sho(
+                sho
+            )
+
+            # Verify private key can actually
+            # be decrypted using configured password.
+
+            load_private_key(
+                key.private_key
+            )
+
+            users[f"io_{username}"] = io
             users[f"sho_{username}"] = sho
+
+        # ========================================================
+        # ADMIN
+        # ========================================================
 
         admin, _ = User.objects.get_or_create(
             username="admin",
-            defaults={"id_number": "ADMIN-1", "role": "IO"},
+            defaults={
+                "id_number": "ADMIN-001",
+            },
         )
-        admin.role = "IO"
+
+        admin.role = "ADMIN"
         admin.is_staff = True
         admin.is_superuser = True
         admin.is_active = True
-        admin.set_password("Admin@12345")
+
+        admin.set_password(
+            "Admin@12345"
+        )
+
         admin.save()
+
         users["admin"] = admin
+
         return users
 
-    def _create_cases(self, stations, users):
+    # ============================================================
+    # CASES
+    # ============================================================
+
+    def create_cases(
+        self,
+        stations,
+        users,
+    ):
+
         definitions = [
-            ("CASE-BAN-001", "Banaswadi Test Investigation", "Banaswadi Police Station", "banaswadi"),
-            ("CASE-BAS-001", "Basavanagudi Test Investigation", "Basavanagudi Police Station", "basavanagudi"),
+
+            (
+                "CASE-BAN-001",
+                "Banaswadi Test Investigation",
+                "Banaswadi Police Station",
+                "banaswadi",
+            ),
+
+            (
+                "CASE-BAS-001",
+                "Basavanagudi Test Investigation",
+                "Basavanagudi Police Station",
+                "basavanagudi",
+            ),
+
         ]
+
         cases = {}
-        for case_number, title, station_name, username in definitions:
-            io = users[f"io_{username}"]
-            sho = users[f"sho_{username}"]
+
+        for (
+            case_number,
+            title,
+            station_name,
+            username,
+        ) in definitions:
+
+            station = stations[
+                station_name
+            ]
+
+            io = users[
+                f"io_{username}"
+            ]
+
+            sho = users[
+                f"sho_{username}"
+            ]
+
             case, _ = Case.objects.update_or_create(
+
                 case_number=case_number,
+
                 defaults={
+
                     "title": title,
+
                     "case_type": "THEFT",
+
+                    "description": (
+                        "Dummy case created for "
+                        "NyayaVault security and "
+                        "collaboration testing."
+                    ),
+
                     "created_by": io,
+
                     "assigned_to": sho,
-                    "police_station": station_name,
-                    "station": stations[station_name],
+
                     "status": "OPEN",
+
+                    "police_station": station,
+
+                    "police_station_name": station.name,
                 },
             )
-            case.assigned_officers.set([sho])
+
+            # SHO belongs to the case
+            case.assigned_officers.set(
+                [sho]
+            )
+
             cases[case_number] = case
+
         return cases
 
-    def _create_test_document(self, case, io, sho):
-        document, _ = Document.objects.update_or_create(
-            case=case,
-            name="Banaswadi Signing Test Document",
-            defaults={"document_type": "EVIDENCE", "uploaded_by": io},
-        )
-        version, _ = DocumentVersion.objects.update_or_create(
-            document=document,
-            version_number=1,
+    # ============================================================
+    # DOCUMENTS
+    # ============================================================
+
+    def create_documents(
+        self,
+        cases,
+        users,
+    ):
+
+        documents = [
+
+            (
+                "CASE-BAN-001",
+                "Banaswadi FIR",
+                "FIR",
+                "banaswadi",
+            ),
+
+            (
+                "CASE-BAN-001",
+                "Banaswadi Evidence Report",
+                "EVIDENCE",
+                "banaswadi",
+            ),
+
+            (
+                "CASE-BAS-001",
+                "Basavanagudi FIR",
+                "FIR",
+                "basavanagudi",
+            ),
+
+            (
+                "CASE-BAS-001",
+                "Basavanagudi Investigation Report",
+                "INVESTIGATION_REPORT",
+                "basavanagudi",
+            ),
+        ]
+
+        for (
+            case_number,
+            document_name,
+            document_type,
+            username,
+        ) in documents:
+
+            case = cases[
+                case_number
+            ]
+
+            io = users[
+                f"io_{username}"
+            ]
+
+            sho = users[
+                f"sho_{username}"
+            ]
+
+            document, _ = Document.objects.update_or_create(
+
+                case=case,
+
+                name=document_name,
+
+                defaults={
+                    "document_type": document_type,
+                    "uploaded_by": io,
+                },
+            )
+
+            version, created = (
+                DocumentVersion.objects.get_or_create(
+
+                    document=document,
+
+                    version_number=1,
+
+                    defaults={
+                        "uploaded_by": io,
+                        "status": "PENDING_REVIEW",
+                    },
+                )
+            )
+
+            # Create file only if missing
+
+            if not version.file:
+
+                safe_name = (
+                    document_name
+                    .lower()
+                    .replace(" ", "_")
+                    .replace("/", "_")
+                )
+
+                version.file = SimpleUploadedFile(
+
+                    f"{safe_name}.txt",
+
+                    (
+                        f"NyayaVault test document\n\n"
+                        f"Case: {case.case_number}\n"
+                        f"Document: {document_name}\n"
+                        f"Uploaded by: {io.username}\n"
+                        f"Police Station: {case.police_station.name}\n"
+                    ).encode("utf-8"),
+                )
+
+                version.save()
+
+    # ============================================================
+    # LAWYER + COURT
+    # ============================================================
+
+    def create_lawyer_and_court(self):
+
+        lawyer, _ = User.objects.get_or_create(
+            username="lawyer_test",
             defaults={
-                "uploaded_by": io,
-                "status": "APPROVED",
-                "reviewed_by": sho,
+                "id_number": "LAWYER-001",
             },
         )
-        if not version.file:
-            version.file = SimpleUploadedFile(
-                "banaswadi-signing-test.txt",
-                b"NyayaVault Banaswadi digital signing test document.",
+
+        lawyer.role = "LAWYER"
+        lawyer.registration_number = "LAW-REG-001"
+        lawyer.is_active = True
+
+        lawyer.set_password(
+            PASSWORD
+        )
+
+        lawyer.save()
+
+        court, _ = User.objects.get_or_create(
+            username="court_test",
+            defaults={
+                "id_number": "COURT-001",
+            },
+        )
+
+        court.role = "COURT"
+        court.registration_number = "COURT-REG-001"
+        court.is_active = True
+
+        court.set_password(
+            PASSWORD
+        )
+
+        court.save()
+
+    # ============================================================
+    # SUMMARY
+    # ============================================================
+
+    def print_summary(self):
+
+        self.stdout.write(
+            "\n" + "=" * 60
+        )
+
+        self.stdout.write(
+            "NYAYAVAULT DUMMY DATA"
+        )
+
+        self.stdout.write(
+            "=" * 60
+        )
+
+        self.stdout.write(
+            "\nPOLICE STATIONS"
+        )
+
+        for (
+            name,
+            code,
+        ) in STATIONS:
+
+            self.stdout.write(
+                f"  {name} ({code})"
             )
-            version.save()
+
+        self.stdout.write(
+            "\nPOLICE USERS"
+        )
+
+        for (
+            username,
+            station,
+            code,
+        ) in POLICE_USERS:
+
+            self.stdout.write(
+                f"\n{station}"
+            )
+
+            self.stdout.write(
+                f"\n  IO:"
+            )
+
+            self.stdout.write(
+                f"\n    username: io_{username}"
+            )
+
+            self.stdout.write(
+                f"\n    password: {PASSWORD}"
+            )
+
+            self.stdout.write(
+                f"\n  SHO:"
+            )
+
+            self.stdout.write(
+                f"\n    username: sho_{username}"
+            )
+
+            self.stdout.write(
+                f"\n    password: {PASSWORD}"
+            )
+
+            self.stdout.write(
+                f"\n    signing key: RSA-4096"
+            )
+
+        self.stdout.write(
+            "\n\nLAWYER"
+        )
+
+        self.stdout.write(
+            "\n  username: lawyer_test"
+        )
+
+        self.stdout.write(
+            "\n  password: Test@12345"
+        )
+
+        self.stdout.write(
+            "\n  registration: LAW-REG-001"
+        )
+
+        self.stdout.write(
+            "\n\nCOURT"
+        )
+
+        self.stdout.write(
+            "\n  username: court_test"
+        )
+
+        self.stdout.write(
+            "\n  password: Test@12345"
+        )
+
+        self.stdout.write(
+            "\n  registration: COURT-REG-001"
+        )
+
+        self.stdout.write(
+            "\n\nADMIN"
+        )
+
+        self.stdout.write(
+            "\n  username: admin"
+        )
+
+        self.stdout.write(
+            "\n  password: Admin@12345"
+        )
+
+        self.stdout.write(
+            "\n\nTEST CASES"
+        )
+
+        self.stdout.write(
+            "\n  CASE-BAN-001 → Banaswadi"
+        )
+
+        self.stdout.write(
+            "\n  CASE-BAS-001 → Basavanagudi"
+        )
+
+        self.stdout.write(
+            "\n\nTESTING FLOW"
+        )
+
+        self.stdout.write(
+            "\n  1. Login as Banaswadi IO"
+        )
+
+        self.stdout.write(
+            "\n  2. Verify CASE-BAN-001 is visible"
+        )
+
+        self.stdout.write(
+            "\n  3. Verify CASE-BAS-001 is NOT visible"
+        )
+
+        self.stdout.write(
+            "\n  4. Login as Banaswadi SHO"
+        )
+
+        self.stdout.write(
+            "\n  5. Verify CASE-BAN-001 is visible"
+        )
+
+        self.stdout.write(
+            "\n  6. Verify CASE-BAS-001 is NOT visible"
+        )
+
+        self.stdout.write(
+            "\n  7. Approve/sign Banaswadi documents"
+        )
+
+        self.stdout.write(
+            "\n  8. Use SHARE from SHO"
+        )
+
+        self.stdout.write(
+            "\n  9. Share selected documents to Basavanagudi"
+        )
+
+        self.stdout.write(
+            "\n 10. Login as Basavanagudi SHO"
+        )
+
+        self.stdout.write(
+            "\n 11. Verify shared documents"
+        )
+
+        self.stdout.write(
+            "\n 12. Verify SHA-256 integrity"
+        )
+
+        self.stdout.write(
+            "\n 13. Verify RSA digital signature"
+        )
+
+        self.stdout.write(
+            "\n 14. Test lawyer sharing using LAW-REG-001"
+        )
+
+        self.stdout.write(
+            "\n 15. Test court sharing using COURT-REG-001"
+        )
+
+        self.stdout.write(
+            "\n" + "=" * 60
+        )

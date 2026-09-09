@@ -9,7 +9,7 @@ from .views import (
 
 urlpatterns = [
     path(
-        "",  # Handles http://127.0.0
+        "", 
         login_view,
         name="home"
     ),

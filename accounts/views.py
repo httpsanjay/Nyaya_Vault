@@ -3,8 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
+from django.utils import timezone
 
 from cases.models import Case, Document, DocumentVersion
+from cases.models import DocumentShare
+from .forms import RegistrationForm
 from .models import User
 from cases.models import Case, Document, DocumentVersion
 
@@ -59,82 +62,16 @@ def register_view(request):
     if request.user.is_authenticated:
         return redirect("dashboard")
 
-    if request.method == "POST":
-
-        first_name = request.POST.get("first_name")
-        last_name = request.POST.get("last_name")
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        id_number = request.POST.get("id_number")
-        phone_number = request.POST.get("phone_number")
-        department = request.POST.get("department")
-        designation = request.POST.get("designation")
-        police_station = request.POST.get("police_station", "").strip()
-        role = request.POST.get("role")
-
-        password1 = request.POST.get("password1")
-        password2 = request.POST.get("password2")
-
-        # Password check
-        if password1 != password2:
-            return render(
-                request,
-                "accounts/register.html",
-                {
-                    "error": "Passwords do not match."
-                }
-            )
-
-        # Username check
-        if User.objects.filter(
-            username=username
-        ).exists():
-
-            return render(
-                request,
-                "accounts/register.html",
-                {
-                    "error": "Username already exists."
-                }
-            )
-
-        # ID check
-        if User.objects.filter(
-            id_number=id_number
-        ).exists():
-
-            return render(
-                request,
-                "accounts/register.html",
-                {
-                    "error": "Identification number already exists."
-                }
-            )
-
-        # Create user
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password1,
-            first_name=first_name,
-            last_name=last_name,
-            id_number=id_number,
-            phone_number=phone_number,
-            department=department,
-            designation=designation,
-            police_station=police_station,
-            role=role
-        )
+    form = RegistrationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
 
         # Login after registration
         login(request, user)
 
         return redirect("dashboard")
 
-    return render(
-        request,
-        "accounts/register.html"
-    )
+    return render(request, "accounts/register.html", {"form": form})
 
 
 def logout_view(request):
@@ -159,8 +96,9 @@ def dashboard(request):
     # =========================================================
 
     if user.role == "SHO":
-        # SHO can see all cases
-        user_cases = Case.objects.all()
+        user_cases = Case.objects.filter(
+            police_station=user.police_station,
+        )
 
     elif user.role == "IO":
 
@@ -169,6 +107,8 @@ def dashboard(request):
 
 
         user_cases = Case.objects.filter(
+            police_station=user.police_station,
+        ).filter(
             Q(created_by=user) |
             Q(assigned_to=user) |
             Q(assigned_officers=user)
@@ -177,13 +117,15 @@ def dashboard(request):
     elif user.role == "FORENSIC_OFFICER":
         # Forensic officer sees only assigned/collaborating cases
         user_cases = Case.objects.filter(
+            police_station=user.police_station,
+        ).filter(
             Q(assigned_to=user) |
             Q(assigned_officers=user)
         ).distinct()
 
     else:
         # Admin / other users
-        user_cases = Case.objects.all()
+        user_cases = Case.objects.all() if user.is_superuser or user.role == "ADMIN" else Case.objects.none()
 
 
     # =========================================================
@@ -223,22 +165,26 @@ def dashboard(request):
     # CASES SPECIFICALLY ASSIGNED TO USER
     # =========================================================
 
-    if user.role == "SHO":
+    assigned_cases = user_cases.select_related(
+        "created_by",
+        "assigned_to",
+    ).prefetch_related(
+        "assigned_officers",
+    ).order_by("-updated_at")
 
-        assigned_cases = Case.objects.all()
-
-    else:
-
-        assigned_cases = Case.objects.filter(
-    Q(created_by=request.user)
-    | Q(assigned_to=request.user)
-    | Q(assigned_officers=request.user)
-).select_related(
-    "created_by",
-    "assigned_to",
-).prefetch_related(
-    "assigned_officers",
-).distinct().order_by("-updated_at")
+    shared_versions = DocumentVersion.objects.filter(
+        shares__is_active=True,
+    ).filter(
+        Q(shares__expires_at__isnull=True) |
+        Q(shares__expires_at__gt=timezone.now()),
+    ).filter(
+        Q(shares__target_type=DocumentShare.POLICE_STATION,
+          shares__police_station=user.police_station) |
+        Q(shares__recipient_user=user),
+    ).select_related(
+        "document",
+        "document__case",
+    ).distinct()
 
 
     # =========================================================
@@ -256,6 +202,7 @@ def dashboard(request):
 
             "recent_cases": recent_cases,
             "assigned_cases": assigned_cases,
+            "shared_versions": shared_versions,
         }
     )
 

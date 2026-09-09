@@ -5,9 +5,12 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
 
     ROLE_CHOICES = [
+        ('ADMIN', 'System Administrator'),
         ('IO', 'Investigating Officer'),
         ('SHO', 'Station House Officer'),
         ('FORENSIC_OFFICER', 'Forensic Officer'),
+        ('LAWYER', 'Lawyer'),
+        ('COURT', 'Court Official'),
     ]
 
     role = models.CharField(max_length=20,choices=ROLE_CHOICES,default='IO')
@@ -20,9 +23,23 @@ class User(AbstractUser):
 
     designation = models.CharField(max_length=100,blank=True)
 
-    police_station = models.CharField(max_length=150, blank=True)
+    police_station_name = models.CharField(max_length=150, blank=True)
 
-    station = models.ForeignKey(
+    lawyer_registration_number = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+
+    court_registration_number = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True,
+    )
+
+    police_station = models.ForeignKey(
         "cases.PoliceStation",
         on_delete=models.PROTECT,
         null=True,

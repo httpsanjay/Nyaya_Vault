@@ -194,9 +194,9 @@
                     <h2>Document Preview</h2>
                     <div class="preview">
                         {% if version.file and preview_type == 'pdf' %}
-                            <iframe src="{{ version.file.url }}" title="Preview of {{ filename }}"></iframe>
+                            <iframe src="{% url 'download_document_version' version.pk %}" title="Preview of {{ filename }}"></iframe>
                         {% elif version.file and preview_type == 'image' %}
-                            <img src="{{ version.file.url }}" alt="Preview of {{ filename }}">
+                            <img src="{% url 'download_document_version' version.pk %}" alt="Preview of {{ filename }}">
                         {% elif version.file %}
                             <div class="preview-empty">
                                 This file type cannot be previewed here. Use the download button to open the original document.
@@ -207,7 +207,7 @@
                     </div>
                     {% if version.file %}
                         <div class="preview-actions">
-                            <a class="btn" href="{{ version.file.url }}" download>Download Original Document</a>
+                            <a class="btn" href="{% url 'download_document_version' version.pk %}">Download Original Document</a>
                         </div>
                     {% endif %}
                 </div>

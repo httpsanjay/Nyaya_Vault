@@ -51,6 +51,10 @@ urlpatterns = [
         views.document_version_view,
         name="document_version_view"
     ),
+    path("<int:pk>/share/", views.share_case, name="share_case"),
+    path("shared-with-me/", views.shared_with_me, name="shared_with_me"),
+    path("documents/versions/<int:pk>/download/", views.download_document_version, name="download_document_version"),
+    path("shares/<int:pk>/revoke/", views.revoke_document_share, name="revoke_document_share"),
 
     path(
         "digital-signing/enable/",

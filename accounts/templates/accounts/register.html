@@ -241,12 +241,22 @@
 
         <div class="form-group">
             <label>Police Station</label>
+            <select name="station">
+                <option value="">Select police station</option>
+                {% for station in form.fields.station.queryset %}
+                    <option value="{{ station.pk }}">{{ station.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-            <input
-                type="text"
-                name="police_station"
-                placeholder="Police station"
-            >
+        <div class="form-group">
+            <label>Lawyer Registration Number (lawyers only)</label>
+            <input type="text" name="lawyer_registration_number">
+        </div>
+
+        <div class="form-group">
+            <label>Court Registration Number (court users only)</label>
+            <input type="text" name="court_registration_number">
         </div>
 
         <div class="form-group">
@@ -267,6 +277,9 @@
                 <option value="FORENSIC_OFFICER">
                     Forensic Officer
                 </option>
+
+                <option value="LAWYER">Lawyer</option>
+                <option value="COURT">Court Official</option>
 
                 <option value="PROSECUTOR">
                     Prosecutor

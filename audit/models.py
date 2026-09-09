@@ -22,6 +22,10 @@ class AuditLog(models.Model):
 
         ("DOCUMENT_SIGNED", "Document Digitally Signed"),
         ("DOCUMENT_VERIFIED", "Document Verified"),
+        ("DOCUMENT_SHARED", "Document Shared"),
+        ("DOCUMENT_SHARE_REVOKED", "Document Share Revoked"),
+        ("SHARED_DOCUMENT_VIEWED", "Shared Document Viewed"),
+        ("SHARED_DOCUMENT_DOWNLOADED", "Shared Document Downloaded"),
 
         ("OTHER", "Other"),
     ]

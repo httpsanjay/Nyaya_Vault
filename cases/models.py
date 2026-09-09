@@ -96,9 +96,9 @@ class Case(models.Model):
         related_name="created_cases"
     )
 
-    police_station = models.CharField(max_length=150, blank=True)
+    police_station_name = models.CharField(max_length=150, blank=True)
 
-    station = models.ForeignKey(
+    police_station = models.ForeignKey(
         "PoliceStation",
         on_delete=models.PROTECT,
         null=True,
@@ -354,9 +354,76 @@ class PoliceStation(models.Model):
     name = models.CharField(max_length=150, unique=True)
     code = models.CharField(max_length=50, unique=True)
     is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+
+
+class DocumentShare(models.Model):
+
+    POLICE_STATION = "POLICE_STATION"
+    LAWYER = "LAWYER"
+    COURT = "COURT"
+    TARGET_TYPES = [
+        (POLICE_STATION, "Police Station"),
+        (LAWYER, "Lawyer"),
+        (COURT, "Court"),
+    ]
+
+    VIEW = "VIEW"
+    DOWNLOAD = "DOWNLOAD"
+    VIEW_DOWNLOAD = "VIEW_DOWNLOAD"
+    PERMISSIONS = [
+        (VIEW, "View"),
+        (DOWNLOAD, "Download"),
+        (VIEW_DOWNLOAD, "View + Download"),
+    ]
+
+    document_version = models.ForeignKey(
+        DocumentVersion,
+        on_delete=models.CASCADE,
+        related_name="shares",
+    )
+    shared_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_document_shares",
+    )
+    target_type = models.CharField(max_length=20, choices=TARGET_TYPES)
+    police_station = models.ForeignKey(
+        PoliceStation,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="document_shares",
+    )
+    recipient_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="received_document_shares",
+    )
+    permission = models.CharField(
+        max_length=20,
+        choices=PERMISSIONS,
+        default=VIEW_DOWNLOAD,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="revoked_document_shares",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]

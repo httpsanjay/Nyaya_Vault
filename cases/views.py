@@ -17,7 +17,7 @@ from django.core.mail import EmailMessage
 from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
 from django.db.models import Q
-from django.http import HttpResponse, JsonResponse
+from django.http import FileResponse, HttpResponse, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .filters import CaseFilter
@@ -33,6 +33,7 @@ from .models import (
     Document,
     DocumentVersion,
     PoliceStation,
+    DocumentShare,
     UserSigningKey,
 )
 from .tasks import extract_document_text
@@ -42,6 +43,11 @@ from .utils import (
     create_signature,
     verify_signature,
     create_signing_key_for_sho,
+)
+from .permissions import (
+    can_access_case,
+    can_access_document_version,
+    can_download_document_version,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,6 +86,8 @@ def case_list(request):
         # - cases created by himself
         # - cases assigned to himself
         cases = Case.objects.filter(
+            Q(police_station=user.police_station)
+        ).filter(
             Q(created_by=user) |
             Q(assigned_to=user) |
             Q(assigned_officers=user)
@@ -92,11 +100,17 @@ def case_list(request):
         # have more specific role restrictions.
         if user.role == "SHO":
             cases = Case.objects.filter(
-                Q(station=user.station) |
-                Q(station__isnull=True, police_station=user.police_station)
+                Q(police_station=user.police_station)
+            ).distinct()
+        elif user.is_superuser or user.role == "ADMIN":
+            cases = Case.objects.all()
+        elif user.role == "FORENSIC_OFFICER":
+            cases = Case.objects.filter(
+                police_station=user.police_station,
+                assigned_officers=user,
             ).distinct()
         else:
-            cases = Case.objects.all()
+            cases = Case.objects.none()
 
     # =========================================================
     # SEARCH
@@ -184,6 +198,9 @@ def case_list(request):
 @login_required
 def case_create(request):
 
+    if request.user.role != "IO":
+        return HttpResponseForbidden("Access denied")
+
     if request.method == "POST":
 
         form = CaseForm(request.POST)
@@ -194,7 +211,7 @@ def case_create(request):
 
             case.created_by = request.user
             case.police_station = request.user.police_station
-            case.station = request.user.station
+            case.police_station_name = request.user.police_station.name
 
             case.save()
 
@@ -235,38 +252,9 @@ def case_detail(request, pk):
     # CASE ACCESS CONTROL
     # =========================================================
 
-    if user.role == "IO":
-
-        # IO can access only:
-        # 1. Cases created by the IO
-        # 2. Cases assigned to the IO
-
-        case = get_object_or_404(
-            Case.objects.filter(
-                Q(created_by=user) |
-                Q(assigned_to=user) |
-                Q(assigned_officers=user)
-            ).distinct(),
-            pk=pk
-        )
-
-    elif user.role == "SHO":
-
-        case = get_object_or_404(
-            Case.objects.filter(
-                Q(station=user.station) |
-                Q(station__isnull=True, police_station=user.police_station)
-            ).distinct(),
-            pk=pk,
-        )
-
-    else:
-
-        # Other authorized roles
-        case = get_object_or_404(
-            Case,
-            pk=pk
-        )
+    case = get_object_or_404(Case, pk=pk)
+    if not can_access_case(user, case):
+        return HttpResponseForbidden("Access denied")
 
     # =========================================================
     # POST ACTION
@@ -551,6 +539,8 @@ def document_create(request, pk):
         Case,
         pk=pk
     )
+    if not can_access_case(request.user, case):
+        return HttpResponseForbidden("Access denied")
 
     if request.method == "POST":
 
@@ -603,6 +593,8 @@ def document_delete(request, pk):
     )
 
     case = document.case
+    if not can_access_case(request.user, case):
+        return HttpResponseForbidden("Access denied")
 
     if request.method == "POST":
 
@@ -654,6 +646,8 @@ def document_version_delete(request, pk):
 
     document = version.document
     case = document.case
+    if not can_access_case(request.user, case):
+        return HttpResponseForbidden("Access denied")
 
     if request.method != "POST":
         return redirect(
@@ -710,6 +704,8 @@ def document_upload_version(request, pk):
         Document,
         pk=pk
     )
+    if not can_access_case(request.user, document.case):
+        return HttpResponseForbidden("Access denied")
 
     if request.method == "POST":
 
@@ -796,9 +792,20 @@ def document_detail(request, pk):
         Document,
         pk=pk
     )
+    internal_access = can_access_case(request.user, document.case)
+    if not internal_access:
+        shared_versions = [
+            version
+            for version in document.versions.all()
+            if can_access_document_version(request.user, version)
+        ]
+        if not shared_versions:
+            return HttpResponseForbidden("Access denied")
+    else:
+        shared_versions = None
 
-    versions = document.versions.all()
-    latest_version = versions.first()
+    versions = list(shared_versions) if shared_versions is not None else document.versions.all()
+    latest_version = versions[0] if versions else None
     signing_key_enabled = (
         request.user.role == "SHO"
         and UserSigningKey.objects.filter(user=request.user).exists()
@@ -831,17 +838,18 @@ def document_version_view(request, pk):
         "signed_by",
     )
 
-    if request.user.role == "IO":
-        versions = versions.filter(
-            Q(document__case__created_by=request.user) |
-            Q(document__case__assigned_to=request.user) |
-            Q(document__case__assigned_officers=request.user)
-        ).distinct()
-
-    version = get_object_or_404(
-        versions,
-        pk=pk,
-    )
+    version = get_object_or_404(versions, pk=pk)
+    if not can_access_document_version(request.user, version):
+        return HttpResponseForbidden("Access denied")
+    if not can_access_case(request.user, version.document.case):
+        create_audit_log(
+            request=request,
+            action="SHARED_DOCUMENT_VIEWED",
+            description=f"{request.user.username} viewed a shared document.",
+            case=version.document.case,
+            document=version.document,
+            document_version=version,
+        )
     document = version.document
 
     integrity_valid = None
@@ -1008,7 +1016,20 @@ def document_version_view(request, pk):
 def document_ocr_status(request, pk):
 
     document = get_object_or_404(Document, pk=pk)
-    version = document.versions.first()
+    versions = document.versions.order_by("-version_number")
+    if can_access_case(request.user, document.case):
+        version = versions.first()
+    else:
+        version = next(
+            (
+                candidate
+                for candidate in versions
+                if can_access_document_version(request.user, candidate)
+            ),
+            None,
+        )
+        if version is None:
+            return HttpResponseForbidden("Access denied")
 
     if version is None:
         return JsonResponse({"status": "EMPTY"})
@@ -1021,6 +1042,155 @@ def document_ocr_status(request, pk):
         "version_number": version.version_number,
         "error": version.ocr_error,
     })
+
+
+@login_required
+def share_case(request, pk):
+    case = get_object_or_404(Case, pk=pk)
+    if request.user.role != "SHO" or not can_access_case(request.user, case):
+        return HttpResponseForbidden("Access denied")
+
+    versions = DocumentVersion.objects.filter(
+        document__case=case,
+    ).select_related("document").order_by("document__name", "version_number")
+    stations = PoliceStation.objects.filter(
+        is_active=True,
+    ).exclude(pk=case.police_station_id).order_by("name")
+
+    if request.method == "POST":
+        selected_ids = request.POST.getlist("document_versions")
+        selected_versions = list(versions.filter(pk__in=selected_ids))
+        if not selected_versions or len(selected_versions) != len(set(selected_ids)):
+            messages.error(request, "Select valid document versions from this case.")
+            return redirect("share_case", pk=case.pk)
+
+        target_type = request.POST.get("target_type")
+        permission = request.POST.get("permission")
+        if permission not in dict(DocumentShare.PERMISSIONS):
+            messages.error(request, "Select a valid sharing permission.")
+            return redirect("share_case", pk=case.pk)
+
+        share_kwargs = {
+            "shared_by": request.user,
+            "target_type": target_type,
+            "permission": permission,
+        }
+        destination_label = ""
+        if target_type == DocumentShare.POLICE_STATION:
+            station = get_object_or_404(
+                PoliceStation.objects.filter(is_active=True),
+                pk=request.POST.get("police_station"),
+            )
+            if station.pk == case.police_station_id:
+                return HttpResponseForbidden("Access denied")
+            share_kwargs["police_station"] = station
+            destination_label = station.name
+        elif target_type == DocumentShare.LAWYER:
+            recipient = User.objects.filter(
+                role="LAWYER",
+                lawyer_registration_number=request.POST.get("registration_number", "").strip(),
+                is_active=True,
+            ).first()
+            if recipient is None:
+                messages.error(request, "Lawyer with this registration number was not found.")
+                return redirect("share_case", pk=case.pk)
+            share_kwargs["recipient_user"] = recipient
+            destination_label = recipient.lawyer_registration_number
+        elif target_type == DocumentShare.COURT:
+            recipient = User.objects.filter(
+                role="COURT",
+                court_registration_number=request.POST.get("registration_number", "").strip(),
+                is_active=True,
+            ).first()
+            if recipient is None:
+                messages.error(request, "Court account with this registration number was not found.")
+                return redirect("share_case", pk=case.pk)
+            share_kwargs["recipient_user"] = recipient
+            destination_label = recipient.court_registration_number
+        else:
+            messages.error(request, "Select a valid share destination.")
+            return redirect("share_case", pk=case.pk)
+
+        with transaction.atomic():
+            for version in selected_versions:
+                share = DocumentShare.objects.create(
+                    document_version=version,
+                    **share_kwargs,
+                )
+                create_audit_log(
+                    request=request,
+                    action="DOCUMENT_SHARED",
+                    description=(
+                        f"{request.user.username} shared {version.document.name} "
+                        f"version {version.version_number} with {destination_label}."
+                    ),
+                    case=case,
+                    document=version.document,
+                    document_version=version,
+                )
+        messages.success(request, "Selected document versions shared successfully.")
+        return redirect("share_case", pk=case.pk)
+
+    return render(request, "cases/share_case.html", {
+        "case": case,
+        "versions": versions,
+        "stations": stations,
+        "permissions": DocumentShare.PERMISSIONS,
+    })
+
+
+@login_required
+def shared_with_me(request):
+    versions = DocumentVersion.objects.filter(
+        shares__in=DocumentShare.objects.filter(
+            is_active=True,
+        ).filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+        ).filter(
+            Q(target_type=DocumentShare.POLICE_STATION, police_station_id=request.user.police_station_id)
+            | Q(target_type__in=[DocumentShare.LAWYER, DocumentShare.COURT], recipient_user=request.user)
+        )
+    ).select_related("document", "document__case").distinct()
+    return render(request, "cases/shared_with_me.html", {"versions": versions})
+
+
+@login_required
+def download_document_version(request, pk):
+    version = get_object_or_404(DocumentVersion, pk=pk)
+    if not can_download_document_version(request.user, version):
+        return HttpResponseForbidden("Access denied")
+    if not version.file:
+        return HttpResponse("File unavailable", status=404)
+    create_audit_log(
+        request=request,
+        action="SHARED_DOCUMENT_DOWNLOADED",
+        description=f"{request.user.username} downloaded {version.document.name} version {version.version_number}.",
+        case=version.document.case,
+        document=version.document,
+        document_version=version,
+    )
+    return FileResponse(version.file.open("rb"), as_attachment=True, filename=os.path.basename(version.file.name))
+
+
+@login_required
+def revoke_document_share(request, pk):
+    share = get_object_or_404(DocumentShare, pk=pk)
+    case = share.document_version.document.case
+    if request.method != "POST" or request.user.role != "SHO" or not can_access_case(request.user, case):
+        return HttpResponseForbidden("Access denied")
+    share.is_active = False
+    share.revoked_at = timezone.now()
+    share.revoked_by = request.user
+    share.save(update_fields=["is_active", "revoked_at", "revoked_by"])
+    create_audit_log(
+        request=request,
+        action="DOCUMENT_SHARE_REVOKED",
+        description=f"{request.user.username} revoked a document share.",
+        case=case,
+        document=share.document_version.document,
+        document_version=share.document_version,
+    )
+    return redirect("share_case", pk=case.pk)
 
 
 # =========================================================
@@ -1116,17 +1286,10 @@ def sign_document_version(request, pk):
 
         return redirect("document_detail", pk=document.pk)
 
-    case_station = document.case.police_station
-    user_station = request.user.police_station
     same_station = (
-        document.case.station_id
-        and request.user.station_id
-        and document.case.station_id == request.user.station_id
-    ) or (
-        not document.case.station_id
-        and not request.user.station_id
-        and case_station
-        and case_station == user_station
+        document.case.police_station_id
+        and request.user.police_station_id
+        and document.case.police_station_id == request.user.police_station_id
     )
     if not same_station:
         messages.error(
@@ -1265,6 +1428,8 @@ def verify_document_version(request, pk):
         DocumentVersion,
         pk=pk
     )
+    if not can_access_document_version(request.user, version):
+        return HttpResponseForbidden("Access denied")
 
     # -----------------------------------------
     # Calculate SHA-256 of CURRENT FILE
@@ -1365,6 +1530,8 @@ def submit_document_for_review(request, pk):
         DocumentVersion,
         pk=pk
     )
+    if not can_access_case(request.user, version.document.case):
+        return HttpResponseForbidden("Access denied")
 
     if request.method != "POST":
         return redirect(
@@ -1448,6 +1615,8 @@ def approve_document(request, pk):
         DocumentVersion,
         pk=pk
     )
+    if not can_access_case(request.user, version.document.case):
+        return HttpResponseForbidden("Access denied")
 
     if request.method != "POST":
 
@@ -1513,6 +1682,8 @@ def reject_document(request, pk):
         DocumentVersion,
         pk=pk
     )
+    if not can_access_case(request.user, version.document.case):
+        return HttpResponseForbidden("Access denied")
 
     if request.method != "POST":
 
@@ -1585,6 +1756,8 @@ def assign_case(request, pk):
         Case,
         pk=pk
     )
+    if not can_access_case(request.user, case):
+        return HttpResponseForbidden("Access denied")
 
     # Only SHO can access case assignment
     if request.user.role != "SHO":

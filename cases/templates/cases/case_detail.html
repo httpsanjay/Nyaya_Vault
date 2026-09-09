@@ -463,6 +463,12 @@
 
     <div class="header">
         <div>
+
+            {% if request.user.role == "SHO" %}
+                <a href="{% url 'share_case' case.pk %}" class="btn btn-primary">
+                    Share Documents
+                </a>
+            {% endif %}
             <h1>{{ case.title }}</h1>
             <div class="case-number">{{ case.case_number }}</div>
 

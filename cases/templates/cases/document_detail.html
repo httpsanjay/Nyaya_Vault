@@ -716,6 +716,12 @@
 
         <div>
 
+            {% if request.user.role == "SHO" %}
+                <a href="{% url 'share_case' document.case.pk %}" class="btn btn-primary">
+                    Share Documents
+                </a>
+            {% endif %}
+
             {% if document.case.assigned_to == request.user or document.case.created_by == request.user %}
 
                 <a
