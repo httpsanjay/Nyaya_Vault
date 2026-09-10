@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <title>Register | NyayaVault</title>
 
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -77,11 +79,59 @@
             font-size: 14px;
             background: white;
             outline: none;
+            transition: border-color 0.15s ease,
+                        box-shadow 0.15s ease;
         }
 
         input:focus,
         select:focus {
             border-color: #2563eb;
+            box-shadow: 0 0 0 3px #dbeafe;
+        }
+
+        /* Validation states */
+
+        input.valid,
+        select.valid {
+            border-color: #16a34a;
+        }
+
+        input.invalid,
+        select.invalid {
+            border-color: #dc2626;
+        }
+
+        .validation-message {
+            display: block;
+            min-height: 16px;
+            margin-top: 5px;
+            font-size: 12px;
+        }
+
+        .validation-message.error {
+            color: #dc2626;
+        }
+
+        .validation-message.success {
+            color: #16a34a;
+        }
+
+        /* Django errors */
+
+        .django-error {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .general-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            padding: 11px 12px;
+            border-radius: 7px;
+            font-size: 13px;
+            margin-bottom: 17px;
         }
 
         .button {
@@ -95,10 +145,17 @@
             font-weight: 600;
             cursor: pointer;
             margin-top: 5px;
+            transition: background 0.15s ease,
+                        opacity 0.15s ease;
         }
 
         .button:hover {
             background: #1d4ed8;
+        }
+
+        .button:disabled {
+            background: #93c5fd;
+            cursor: not-allowed;
         }
 
         .login {
@@ -114,12 +171,6 @@
             font-weight: 600;
         }
 
-        .error {
-            color: #dc2626;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-
         input:focus,
         select:focus,
         button:focus,
@@ -129,13 +180,30 @@
         }
 
         @media (max-width: 520px) {
-            body { padding: 16px; align-items: flex-start; }
-            .container { width: 100%; padding: 28px 20px; }
-            .row { flex-direction: column; gap: 0; }
-            .logo h1 { font-size: 24px; }
+
+            body {
+                padding: 16px;
+                align-items: flex-start;
+            }
+
+            .container {
+                width: 100%;
+                padding: 28px 20px;
+            }
+
+            .row {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .logo h1 {
+                font-size: 24px;
+            }
         }
+
     </style>
 </head>
+
 
 <body>
 
@@ -146,196 +214,947 @@
         <p>Create your secure account</p>
     </div>
 
-    <form method="POST">
+
+    <form method="POST" id="registerForm">
 
         {% csrf_token %}
+
+
+        <!-- ========================= -->
+        <!-- DJANGO GENERAL ERRORS -->
+        <!-- ========================= -->
+
+        {% if form.non_field_errors %}
+
+            <div class="general-error">
+
+                {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                {% endfor %}
+
+            </div>
+
+        {% endif %}
+
+
+        <!-- ========================= -->
+        <!-- NAME -->
+        <!-- ========================= -->
 
         <div class="row">
 
             <div class="form-group">
-                <label>First Name</label>
+
+                <label for="first_name">
+                    First Name
+                </label>
 
                 <input
                     type="text"
                     name="first_name"
+                    id="first_name"
                     placeholder="First name"
+                    value="{{ form.first_name.value|default:'' }}"
                     required
                 >
+
+                {% if form.first_name.errors %}
+                    <div class="django-error">
+                        {% for error in form.first_name.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
             </div>
 
+
             <div class="form-group">
-                <label>Last Name</label>
+
+                <label for="last_name">
+                    Last Name
+                </label>
 
                 <input
                     type="text"
                     name="last_name"
+                    id="last_name"
                     placeholder="Last name"
+                    value="{{ form.last_name.value|default:'' }}"
                     required
                 >
+
+                {% if form.last_name.errors %}
+                    <div class="django-error">
+                        {% for error in form.last_name.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
             </div>
 
         </div>
 
+
+        <!-- ========================= -->
+        <!-- USERNAME -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Username</label>
+
+            <label for="username">
+                Username
+            </label>
 
             <input
                 type="text"
                 name="username"
+                id="username"
                 placeholder="Choose username"
+                value="{{ form.username.value|default:'' }}"
                 required
+                autocomplete="username"
             >
+
+            <small
+                id="username-error"
+                class="validation-message"
+            ></small>
+
+            {% if form.username.errors %}
+                <div class="django-error">
+                    {% for error in form.username.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
 
+
+        <!-- ========================= -->
+        <!-- EMAIL -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Email</label>
+
+            <label for="email">
+                Email
+            </label>
 
             <input
                 type="email"
                 name="email"
+                id="email"
                 placeholder="official@example.com"
+                value="{{ form.email.value|default:'' }}"
                 required
+                autocomplete="email"
             >
+
+            <small
+                id="email-error"
+                class="validation-message"
+            ></small>
+
+            {% if form.email.errors %}
+                <div class="django-error">
+                    {% for error in form.email.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
 
+
+        <!-- ========================= -->
+        <!-- ID NUMBER -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Identification Number</label>
+
+            <label for="id_number">
+                Identification Number
+            </label>
 
             <input
                 type="text"
                 name="id_number"
+                id="id_number"
                 placeholder="Official ID number"
+                value="{{ form.id_number.value|default:'' }}"
                 required
             >
+
+            <small
+                id="id_number-error"
+                class="validation-message"
+            ></small>
+
+            {% if form.id_number.errors %}
+                <div class="django-error">
+                    {% for error in form.id_number.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
 
+
+        <!-- ========================= -->
+        <!-- PHONE -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Phone Number</label>
+
+            <label for="phone_number">
+                Phone Number
+            </label>
 
             <input
                 type="tel"
                 name="phone_number"
+                id="phone_number"
                 placeholder="Phone number"
+                value="{{ form.phone_number.value|default:'' }}"
             >
+
+            <small
+                id="phone_number-error"
+                class="validation-message"
+            ></small>
+
+            {% if form.phone_number.errors %}
+                <div class="django-error">
+                    {% for error in form.phone_number.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
 
+
+        <!-- ========================= -->
+        <!-- DEPARTMENT -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Department</label>
+
+            <label for="department">
+                Department
+            </label>
 
             <input
                 type="text"
                 name="department"
+                id="department"
                 placeholder="Department / Organization"
+                value="{{ form.department.value|default:'' }}"
             >
+
+            {% if form.department.errors %}
+                <div class="django-error">
+                    {% for error in form.department.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
 
+
+        <!-- ========================= -->
+        <!-- DESIGNATION -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Designation</label>
+
+            <label for="designation">
+                Designation
+            </label>
 
             <input
                 type="text"
                 name="designation"
+                id="designation"
                 placeholder="Designation"
+                value="{{ form.designation.value|default:'' }}"
             >
+
+            {% if form.designation.errors %}
+                <div class="django-error">
+                    {% for error in form.designation.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
 
+
+        <!-- ========================= -->
+        <!-- POLICE STATION -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Police Station</label>
-            <select name="station">
-                <option value="">Select police station</option>
+
+            <label for="station">
+                Police Station
+            </label>
+
+            <select name="station" id="station">
+
+                <option value="">
+                    Select police station
+                </option>
+
                 {% for station in form.fields.station.queryset %}
-                    <option value="{{ station.pk }}">{{ station.name }}</option>
+
+                    <option
+                        value="{{ station.pk }}"
+                        {% if form.station.value|stringformat:"s" == station.pk|stringformat:"s" %}
+                            selected
+                        {% endif %}
+                    >
+                        {{ station.name }}
+                    </option>
+
                 {% endfor %}
+
             </select>
+
+            {% if form.station.errors %}
+                <div class="django-error">
+                    {% for error in form.station.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
 
+
+        <!-- ========================= -->
+        <!-- LAWYER REGISTRATION -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Lawyer Registration Number (lawyers only)</label>
-            <input type="text" name="lawyer_registration_number">
+
+            <label for="lawyer_registration_number">
+                Lawyer Registration Number (lawyers only)
+            </label>
+
+            <input
+                type="text"
+                name="lawyer_registration_number"
+                id="lawyer_registration_number"
+                value="{{ form.lawyer_registration_number.value|default:'' }}"
+            >
+
+            <small
+                id="lawyer_registration_number-error"
+                class="validation-message"
+            ></small>
+
+            {% if form.lawyer_registration_number.errors %}
+                <div class="django-error">
+                    {% for error in form.lawyer_registration_number.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
 
+
+        <!-- ========================= -->
+        <!-- COURT REGISTRATION -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Court Registration Number (court users only)</label>
-            <input type="text" name="court_registration_number">
+
+            <label for="court_registration_number">
+                Court Registration Number (court users only)
+            </label>
+
+            <input
+                type="text"
+                name="court_registration_number"
+                id="court_registration_number"
+                value="{{ form.court_registration_number.value|default:'' }}"
+            >
+
+            <small
+                id="court_registration_number-error"
+                class="validation-message"
+            ></small>
+
+            {% if form.court_registration_number.errors %}
+                <div class="django-error">
+                    {% for error in form.court_registration_number.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
 
+
+        <!-- ========================= -->
+        <!-- ROLE -->
+        <!-- ========================= -->
+
         <div class="form-group">
-            <label>Role</label>
 
-            <select name="role" required>
+            <label for="role">
+                Role
+            </label>
 
-                <option value="">Select role</option>
+            <select
+                name="role"
+                id="role"
+                required
+            >
 
-                <option value="IO">
+                <option value="">
+                    Select role
+                </option>
+
+                <option
+                    value="IO"
+                    {% if form.role.value == "IO" %}selected{% endif %}
+                >
                     Investigating Officer
                 </option>
 
-                <option value="SHO">
+                <option
+                    value="SHO"
+                    {% if form.role.value == "SHO" %}selected{% endif %}
+                >
                     Station House Officer
                 </option>
 
-                <option value="FORENSIC_OFFICER">
+                <option
+                    value="FORENSIC_OFFICER"
+                    {% if form.role.value == "FORENSIC_OFFICER" %}selected{% endif %}
+                >
                     Forensic Officer
                 </option>
 
-                <option value="LAWYER">Lawyer</option>
-                <option value="COURT">Court Official</option>
+                <option
+                    value="LAWYER"
+                    {% if form.role.value == "LAWYER" %}selected{% endif %}
+                >
+                    Lawyer
+                </option>
 
-                <option value="PROSECUTOR">
+                <option
+                    value="COURT"
+                    {% if form.role.value == "COURT" %}selected{% endif %}
+                >
+                    Court Official
+                </option>
+
+                <option
+                    value="PROSECUTOR"
+                    {% if form.role.value == "PROSECUTOR" %}selected{% endif %}
+                >
                     Prosecutor
                 </option>
 
-                <option value="JUDGE">
+                <option
+                    value="JUDGE"
+                    {% if form.role.value == "JUDGE" %}selected{% endif %}
+                >
                     Judge / Court Official
                 </option>
 
             </select>
+
+            {% if form.role.errors %}
+                <div class="django-error">
+                    {% for error in form.role.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
         </div>
+
+
+        <!-- ========================= -->
+        <!-- PASSWORD -->
+        <!-- ========================= -->
 
         <div class="row">
 
             <div class="form-group">
-                <label>Password</label>
+
+                <label for="password1">
+                    Password
+                </label>
 
                 <input
                     type="password"
                     name="password1"
+                    id="password1"
                     required
+                    autocomplete="new-password"
                 >
+
+                {% if form.password1.errors %}
+                    <div class="django-error">
+                        {% for error in form.password1.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
             </div>
 
+
             <div class="form-group">
-                <label>Confirm Password</label>
+
+                <label for="password2">
+                    Confirm Password
+                </label>
 
                 <input
                     type="password"
                     name="password2"
+                    id="password2"
                     required
+                    autocomplete="new-password"
                 >
+
+                <small
+                    id="password-error"
+                    class="validation-message"
+                ></small>
+
+                {% if form.password2.errors %}
+                    <div class="django-error">
+                        {% for error in form.password2.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
             </div>
 
         </div>
 
-        {% if error %}
-            <div class="error">
-                {{ error }}
-            </div>
-        {% endif %}
 
-        <button type="submit" class="button">
+        <!-- ========================= -->
+        <!-- SUBMIT -->
+        <!-- ========================= -->
+
+        <button
+            type="submit"
+            class="button"
+            id="submitButton"
+        >
             Create Account
         </button>
 
     </form>
 
+
     <div class="login">
+
         Already have an account?
+
         <a href="{% url 'login' %}">
             Login
         </a>
+
     </div>
 
 </div>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    /*
+     * Fields that must be unique.
+     */
+    const uniqueFields = [
+        "username",
+        "email",
+        "id_number",
+        "phone_number",
+        "lawyer_registration_number",
+        "court_registration_number"
+    ];
+
+
+    /*
+     * Store timers so we don't send a request
+     * for every single keystroke.
+     */
+    const timers = {};
+
+
+    /*
+     * Store validation state.
+     */
+    const validationState = {};
+
+
+    /*
+     * Check every unique field.
+     */
+    uniqueFields.forEach(function (field) {
+
+        const input = document.getElementById(field);
+
+        const message = document.getElementById(
+            field + "-error"
+        );
+
+
+        if (!input || !message) {
+            return;
+        }
+
+
+        validationState[field] = true;
+
+
+        input.addEventListener("input", function () {
+
+            const value = input.value.trim();
+
+
+            clearTimeout(timers[field]);
+
+
+            /*
+             * Empty optional fields are allowed.
+             */
+            if (!value) {
+
+                message.textContent = "";
+
+                message.className =
+                    "validation-message";
+
+                input.classList.remove(
+                    "valid",
+                    "invalid"
+                );
+
+                validationState[field] = true;
+
+                return;
+            }
+
+
+            /*
+             * Don't immediately show "checking".
+             * Wait 400ms after typing stops.
+             */
+            message.textContent = "Checking...";
+
+            message.className =
+                "validation-message";
+
+
+            input.classList.remove(
+                "valid",
+                "invalid"
+            );
+
+
+            validationState[field] = false;
+
+
+            timers[field] = setTimeout(function () {
+
+                fetch(
+                    "{% url 'check_unique_field' %}" +
+                    "?field=" +
+                    encodeURIComponent(field) +
+                    "&value=" +
+                    encodeURIComponent(value)
+                )
+
+                .then(function (response) {
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Server error"
+                        );
+                    }
+
+                    return response.json();
+
+                })
+
+                .then(function (data) {
+
+                    /*
+                     * Make sure the response is still
+                     * for the current value.
+                     */
+                    if (
+                        input.value.trim() !== value
+                    ) {
+                        return;
+                    }
+
+
+                    if (data.valid) {
+
+                        message.textContent =
+                            data.message || "Available.";
+
+                        message.className =
+                            "validation-message success";
+
+
+                        input.classList.remove(
+                            "invalid"
+                        );
+
+                        input.classList.add(
+                            "valid"
+                        );
+
+
+                        validationState[field] =
+                            true;
+
+                    } else {
+
+                        message.textContent =
+                            data.message ||
+                            "Already exists.";
+
+                        message.className =
+                            "validation-message error";
+
+
+                        input.classList.remove(
+                            "valid"
+                        );
+
+                        input.classList.add(
+                            "invalid"
+                        );
+
+
+                        validationState[field] =
+                            false;
+                    }
+
+                })
+
+                .catch(function (error) {
+
+                    console.error(
+                        "Validation error:",
+                        error
+                    );
+
+                    /*
+                     * Don't block registration just
+                     * because the validation request failed.
+                     *
+                     * Django + database validation still
+                     * protects the actual submission.
+                     */
+
+                    message.textContent =
+                        "Unable to check right now.";
+
+                    message.className =
+                        "validation-message error";
+
+                    input.classList.remove(
+                        "valid"
+                    );
+
+                    input.classList.add(
+                        "invalid"
+                    );
+
+                    validationState[field] =
+                        false;
+
+                });
+
+            }, 400);
+
+        });
+
+    });
+
+
+    /*
+     * Password confirmation.
+     */
+    const password1 =
+        document.getElementById("password1");
+
+    const password2 =
+        document.getElementById("password2");
+
+    const passwordError =
+        document.getElementById("password-error");
+
+
+    function checkPasswords() {
+
+        if (!password2.value) {
+
+            passwordError.textContent = "";
+
+            passwordError.className =
+                "validation-message";
+
+            password2.classList.remove(
+                "valid",
+                "invalid"
+            );
+
+            return;
+        }
+
+
+        if (password1.value !== password2.value) {
+
+            passwordError.textContent =
+                "Passwords do not match.";
+
+            passwordError.className =
+                "validation-message error";
+
+            password2.classList.remove(
+                "valid"
+            );
+
+            password2.classList.add(
+                "invalid"
+            );
+
+        } else {
+
+            passwordError.textContent =
+                "Passwords match.";
+
+            passwordError.className =
+                "validation-message success";
+
+            password2.classList.remove(
+                "invalid"
+            );
+
+            password2.classList.add(
+                "valid"
+            );
+        }
+    }
+
+
+    password1.addEventListener(
+        "input",
+        checkPasswords
+    );
+
+    password2.addEventListener(
+        "input",
+        checkPasswords
+    );
+
+
+    /*
+     * Final frontend check before submitting.
+     */
+    const form =
+        document.getElementById("registerForm");
+
+    const submitButton =
+        document.getElementById("submitButton");
+
+
+    form.addEventListener("submit", function (event) {
+
+        let hasError = false;
+
+
+        /*
+         * Check unique fields.
+         */
+        uniqueFields.forEach(function (field) {
+
+            const input =
+                document.getElementById(field);
+
+            /*
+             * Optional empty fields are allowed.
+             */
+            if (
+                input &&
+                input.value.trim() &&
+                validationState[field] === false
+            ) {
+                hasError = true;
+            }
+
+        });
+
+
+        /*
+         * Check passwords.
+         */
+        if (
+            password1.value !==
+            password2.value
+        ) {
+            hasError = true;
+        }
+
+
+        if (hasError) {
+
+            event.preventDefault();
+
+            /*
+             * Find first invalid field.
+             */
+            const invalidField =
+                document.querySelector(
+                    "input.invalid"
+                );
+
+            if (invalidField) {
+                invalidField.focus();
+            }
+
+            return;
+        }
+
+
+        /*
+         * Prevent double-click submissions.
+         */
+        submitButton.disabled = true;
+
+        submitButton.textContent =
+            "Creating Account...";
+
+    });
+
+});
+
+</script>
 
 </body>
 </html>

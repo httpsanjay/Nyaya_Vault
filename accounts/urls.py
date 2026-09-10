@@ -6,6 +6,7 @@ from .views import (
     logout_view,
     dashboard
 )
+from accounts import views
 
 urlpatterns = [
     path(
@@ -23,6 +24,11 @@ urlpatterns = [
         register_view,
         name="register"
     ),
+    path(
+    "check-unique/",
+    views.check_unique_field,
+    name="check_unique_field"
+),
     path(
         "dashboard/",
         dashboard,

@@ -124,6 +124,7 @@
     </style>
 </head>
 
+
 <body>
 
 <div class="container">
@@ -133,38 +134,50 @@
         <p>Secure Digital Case Management System</p>
     </div>
 
-    {% if form.errors %}
-        <div class="error">
-            Invalid username or password.
-        </div>
-    {% endif %}
-
     <form method="POST">
-
         {% csrf_token %}
 
-        <div class="form-group">
-            <label for="username">Username</label>
+        <!-- General form errors -->
+        {% if form.non_field_errors %}
+            <div class="error">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
 
-            <input
-                type="text"
-                name="username"
-                id="username"
-                placeholder="Enter username"
-                required
-            >
+        <!-- Username -->
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">
+                Username
+            </label>
+
+            {{ form.username }}
+
+            {% if form.username.errors %}
+                <div class="field-error">
+                    {% for error in form.username.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
+        <!-- Password -->
         <div class="form-group">
-            <label for="password">Password</label>
+            <label for="{{ form.password.id_for_label }}">
+                Password
+            </label>
 
-            <input
-                type="password"
-                name="password"
-                id="password"
-                placeholder="Enter password"
-                required
-            >
+            {{ form.password }}
+
+            {% if form.password.errors %}
+                <div class="field-error">
+                    {% for error in form.password.errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
 
         <button type="submit" class="button">
@@ -183,4 +196,7 @@
 </div>
 
 </body>
+
+
+
 </html>

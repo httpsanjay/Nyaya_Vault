@@ -13,6 +13,12 @@ from cases.models import DocumentShare
 from .forms import RegistrationForm
 from .models import User
 from cases.models import Case, Document, DocumentVersion
+from .forms import LoginForm
+
+from django.http import JsonResponse
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 def login_view(request):
@@ -21,42 +27,29 @@ def login_view(request):
         return redirect("dashboard")
 
     if request.method == "POST":
+        form = LoginForm(request, data=request.POST)
 
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-
-        user = authenticate(
-            request,
-            username=username,
-            password=password
-        )
-
-        if user is not None:
+        if form.is_valid():
+            user = form.get_user()
 
             if not user.is_active:
-                return render(
-                    request,
-                    "accounts/login.html",
-                    {
-                        "error": "Your account is not active."
-                    }
+                form.add_error(
+                    None,
+                    "Your account is not active."
                 )
+            else:
+                login(request, user)
+                return redirect("dashboard")
 
-            login(request, user)
-
-            return redirect("dashboard")
-
-        return render(
-            request,
-            "accounts/login.html",
-            {
-                "error": "Invalid username or password."
-            }
-        )
+    else:
+        form = LoginForm()
 
     return render(
         request,
-        "accounts/login.html"
+        "accounts/login.html",
+        {
+            "form": form
+        }
     )
 
 
@@ -75,6 +68,55 @@ def register_view(request):
         return redirect("dashboard")
 
     return render(request, "accounts/register.html", {"form": form})
+
+
+
+
+
+def check_unique_field(request):
+
+    field = request.GET.get("field")
+    value = request.GET.get("value", "").strip()
+
+    allowed_fields = {
+        "username": "username",
+        "email": "email",
+        "id_number": "id_number",
+        "phone_number": "phone_number",
+        "lawyer_registration_number": "lawyer_registration_number",
+        "court_registration_number": "court_registration_number",
+    }
+
+    if field not in allowed_fields:
+        return JsonResponse({
+            "valid": False,
+            "message": "Invalid field."
+        })
+
+    if not value:
+        return JsonResponse({
+            "valid": True,
+            "message": ""
+        })
+
+    model_field = allowed_fields[field]
+
+    exists = User.objects.filter(
+        **{
+            f"{model_field}__iexact": value
+        }
+    ).exists()
+
+    if exists:
+        return JsonResponse({
+            "valid": False,
+            "message": "Already exists."
+        })
+
+    return JsonResponse({
+        "valid": True,
+        "message": "Available."
+    })
 
 
 def logout_view(request):
