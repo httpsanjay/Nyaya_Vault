@@ -11,8 +11,8 @@ from accounts import views
 urlpatterns = [
     path(
         "", 
-        login_view,
-        name="home"
+        views.index_view,
+        name="index"
     ),
     path(
         "login/",

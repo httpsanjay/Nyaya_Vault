@@ -21,6 +21,13 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+def index_view(request):
+    
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+
+    return render(request, "accounts/index.html")
+
 def login_view(request):
 
     if request.user.is_authenticated:
