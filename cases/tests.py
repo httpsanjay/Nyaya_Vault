@@ -21,6 +21,7 @@ from .utils import (
 	create_signing_key_for_sho,
 	verify_signature,
 )
+from .search import unified_search
 
 
 @override_settings(
@@ -344,3 +345,118 @@ class CollaborationTests(TestCase):
 		self.assertEqual(self.client.get(reverse("document_version_view", args=[self.version.pk])).status_code, 403)
 
 # Create your tests here.
+
+
+@override_settings(
+	SECURE_SSL_REDIRECT=False,
+	MIDDLEWARE=[
+		"django.middleware.security.SecurityMiddleware",
+		"django.contrib.sessions.middleware.SessionMiddleware",
+		"django.middleware.common.CommonMiddleware",
+		"django.middleware.csrf.CsrfViewMiddleware",
+		"django.contrib.auth.middleware.AuthenticationMiddleware",
+		"django.contrib.messages.middleware.MessageMiddleware",
+		"django.middleware.clickjacking.XFrameOptionsMiddleware",
+	],
+)
+class UnifiedSearchTests(TestCase):
+
+	def setUp(self):
+		self.station = PoliceStation.objects.create(
+			name="Search Station", code="SEARCH"
+		)
+		self.other_station = PoliceStation.objects.create(
+			name="Other Station", code="OTHER"
+		)
+		self.user = User.objects.create_user(
+			username="search-sho", password="password", id_number="SEARCH-SHO",
+			role="SHO", police_station=self.station,
+		)
+		self.other_user = User.objects.create_user(
+			username="other-sho", password="password", id_number="OTHER-SHO",
+			role="SHO", police_station=self.other_station,
+		)
+		self.case = Case.objects.create(
+			case_number="CASE/001", title="Financial Fraud Investigation",
+			case_type="FRAUD", description="Bank transaction inquiry",
+			created_by=self.user, police_station=self.station,
+		)
+		self.fir = self._document(
+			"FIR.pdf", "FIR", "The accused was seen at the crime scene.",
+		)
+		self.failed = self._document(
+			"Unreadable Evidence", "EVIDENCE", "", ocr_status=DocumentVersion.OCR_FAILED,
+		)
+		self.report = self._document(
+			"Bank Transaction Report", "INVESTIGATION_REPORT",
+			"Bank transaction records connect the accused to the transfer.",
+		)
+
+	def _document(self, name, document_type, text, ocr_status=None):
+		document = Document.objects.create(
+			case=self.case, name=name, document_type=document_type,
+			uploaded_by=self.user,
+		)
+		version = DocumentVersion.objects.create(
+			document=document, version_number=1,
+			file=SimpleUploadedFile(f"{name}.txt", b"evidence"),
+			extracted_text=text, uploaded_by=self.user,
+		)
+		if ocr_status:
+			version.ocr_status = ocr_status
+			version.save(update_fields=["ocr_status"])
+		return document
+
+	def test_exact_case_number_returns_all_documents_including_failed_ocr(self):
+		results = unified_search("CASE/001", self.user)
+
+		self.assertEqual(len(results), 1)
+		self.assertEqual(
+			{item["document"].pk for item in results[0]["documents"]},
+			{self.fir.pk, self.failed.pk, self.report.pk},
+		)
+
+	def test_document_name_and_ocr_keyword_search_group_under_case(self):
+		name_results = unified_search("Bank Transaction Report", self.user)
+		text_results = unified_search("crime scene", self.user)
+
+		self.assertEqual(name_results[0]["case"], self.case)
+		self.assertEqual(name_results[0]["documents"][0]["document"], self.report)
+		self.assertEqual(text_results[0]["documents"][0]["document"], self.fir)
+		self.assertTrue(text_results[0]["documents"][0]["matches"])
+
+	def test_semantic_fallback_search_returns_source_metadata(self):
+		results = unified_search("What evidence connects the accused to the crime scene?", self.user)
+		match = results[0]["documents"][0]["matches"][0]
+
+		self.assertEqual(results[0]["case"].pk, self.case.pk)
+		self.assertEqual(match["version_id"], self.fir.versions.first().pk)
+		self.assertIn("crime scene", match["text"])
+
+	def test_search_does_not_return_other_station_case(self):
+		other_case = Case.objects.create(
+			case_number="CASE/002", title="Private Case", case_type="THEFT",
+			created_by=self.other_user, police_station=self.other_station,
+		)
+		Document.objects.create(
+			case=other_case, name="Private Bank Report", document_type="EVIDENCE",
+			uploaded_by=self.other_user,
+		)
+
+		self.assertEqual(unified_search("CASE/002", self.user), [])
+		self.assertEqual(unified_search("Private", self.user), [])
+
+	def test_empty_and_unknown_search_return_no_results(self):
+		self.assertEqual(unified_search("", self.user), [])
+		self.assertEqual(unified_search("does not exist", self.user), [])
+
+	def test_search_api_and_html_are_case_centric(self):
+		self.client.force_login(self.user)
+		response = self.client.get(reverse("search_api"), {"q": "CASE/001"})
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.json()["results"][0]["case"]["case_number"], "CASE/001")
+		self.assertContains(
+			self.client.get(reverse("search"), {"q": "CASE/001"}),
+			"Unreadable Evidence",
+		)

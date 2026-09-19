@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search | NyayaVault</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f5f7fa; color: #1f2937; font-family: Arial, Helvetica, sans-serif; }
+        .navbar { height: 65px; display: flex; align-items: center; justify-content: space-between; padding: 0 7%; background: #111827; color: #fff; }
+        .brand { font-size: 21px; font-weight: 700; }
+        .brand span { color: #60a5fa; }
+        .user { color: #d1d5db; font-size: 14px; }
+        .main { max-width: 1080px; margin: 0 auto; padding: 38px 24px 64px; }
+        .back { color: #2563eb; text-decoration: none; font-size: 14px; }
+        h1 { margin: 22px 0 18px; font-size: 30px; }
+        .search-form { display: flex; gap: 10px; margin-bottom: 30px; }
+        .search-form input { flex: 1; min-width: 0; padding: 13px 15px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; }
+        button { border: 0; border-radius: 6px; padding: 0 22px; background: #2563eb; color: #fff; font-weight: 700; cursor: pointer; }
+        .case-result { margin-bottom: 24px; padding: 24px; background: #fff; border: 1px solid #e5e7eb; border-radius: 7px; box-shadow: 0 2px 8px rgba(17, 24, 39, .05); }
+        .case-number { color: #2563eb; font-size: 13px; font-weight: 700; letter-spacing: .04em; }
+        h2 { margin: 6px 0 22px; font-size: 22px; }
+        h3 { margin: 0; font-size: 16px; }
+        .section-label { margin-bottom: 12px; color: #6b7280; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+        .document { padding: 13px 0; border-top: 1px solid #eef0f3; }
+        .document a { color: #111827; font-weight: 700; text-decoration: none; }
+        .document a:hover { color: #2563eb; }
+        .document-type { margin-left: 8px; color: #6b7280; font-size: 12px; }
+        .match { margin: 8px 0 0; padding: 10px 12px; background: #f8fafc; border-left: 3px solid #60a5fa; color: #4b5563; font-size: 14px; line-height: 1.5; }
+        .empty { padding: 40px 0; color: #6b7280; }
+        @media (max-width: 600px) { .main { padding: 28px 16px; } .search-form { flex-direction: column; } button { min-height: 44px; } .navbar { padding: 0 16px; } }
+    </style>
+</head>
+<body>
+<header class="navbar">
+    <div class="brand">Nyaya<span>Vault</span></div>
+    <div class="user">{{ request.user.get_full_name|default:request.user.username }}</div>
+</header>
+<main class="main">
+    <a class="back" href="{% url 'case_list' %}">&larr; Back to Cases</a>
+    <h1>Search results{% if query %} for: &ldquo;{{ query }}&rdquo;{% endif %}</h1>
+    <form class="search-form" method="get">
+        <input type="search" name="q" value="{{ query }}" placeholder="Search case number, document name, or evidence text..." autofocus>
+        <button type="submit">Search</button>
+    </form>
+
+    {% if query and results %}
+        {% for result in results %}
+            <section class="case-result">
+                <div class="case-number">{{ result.case.case_number }}</div>
+                <h2>{{ result.case.title }}</h2>
+                <div class="section-label">
+                    {% if result.documents.0.matches %}Relevant documents:{% else %}Documents:{% endif %}
+                </div>
+                {% for item in result.documents %}
+                    <div class="document">
+                        <h3>
+                            <a href="{% url 'document_detail' item.document.pk %}">{{ item.document.name }}</a>
+                            <span class="document-type">{{ item.document.get_document_type_display }}</span>
+                        </h3>
+                        {% for match in item.matches %}
+                            <p class="match">Match: &ldquo;{{ match.text }}&rdquo;</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </section>
+        {% endfor %}
+    {% elif query %}
+        <div class="empty">No authorized cases or documents matched your search.</div>
+    {% else %}
+        <div class="empty">Enter a case number, document name, or evidence question to search.</div>
+    {% endif %}
+</main>
+</body>
+</html>

@@ -5,6 +5,18 @@ from . import views
 urlpatterns = [
 
     path(
+        "search/",
+        views.search,
+        name="search",
+    ),
+
+    path(
+        "api/search/",
+        views.search_api,
+        name="search_api",
+    ),
+
+    path(
         "",
         views.case_list,
         name="case_list"

@@ -496,6 +496,15 @@
         </a>
 
 
+        <a
+            href="{% url 'search' %}"
+            class="nav-item"
+        >
+            <span class="nav-icon">▧</span>
+                Advanced Search
+        </a>
+
+
 
         <!-- ================= IO ================= -->
 
@@ -514,6 +523,14 @@
             >
                 <span class="nav-icon">+</span>
                 Create Case
+            </a>
+
+            <a
+                href="{% url 'shared_with_me' %}"
+                class="nav-item"
+            >
+                <span class="nav-icon">+</span>
+                Shared Case
             </a>
 
         {% endif %}
@@ -596,13 +613,7 @@
 
 {% endif %}
 
-        <a
-            href="#"
-            class="nav-item"
-        >
-            <span class="nav-icon">●</span>
-            Notifications
-        </a>
+        
 
 
         <!-- Logout -->

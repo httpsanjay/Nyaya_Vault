@@ -4,6 +4,7 @@ import logging
 import mimetypes
 import os
 import zipfile
+from urllib.parse import urlencode
 
 from .forms import CaseForm, DocumentForm, DocumentVersionForm, CaseAssignmentForm, User
 from cryptography.hazmat.primitives import serialization
@@ -49,8 +50,34 @@ from .permissions import (
     can_access_document_version,
     can_download_document_version,
 )
+from .search import serialize_search_results, unified_search
 
 logger = logging.getLogger(__name__)
+
+
+@login_required
+def search(request):
+    query = request.GET.get("q", "").strip()
+    results = unified_search(query, request.user)
+    return render(
+        request,
+        "cases/search.html",
+        {
+            "query": query,
+            "results": results,
+        },
+    )
+
+
+@login_required
+def search_api(request):
+    query = request.GET.get("q", "").strip()
+    return JsonResponse({
+        "query": query,
+        "results": serialize_search_results(
+            unified_search(query, request.user)
+        ),
+    })
 
 
 def queue_document_ocr(document_version_id):
@@ -166,6 +193,11 @@ def case_list(request):
             Q(assigned_to__last_name__icontains=assigned_officer)
         )
 
+
+    if q and not any([status, case_type, assigned_officer]):
+        return redirect(
+            f"/cases/search/?{urlencode({'q': q})}"
+        )
     # =========================================================
     # ORDERING
     # =========================================================
