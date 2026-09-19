@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ case.case_number }} | NyayaVault</title>
-
-    <style>
-        * {
+{% extends "base.html" %}
+{% block title %}{{ case.case_number }} | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -426,30 +423,31 @@
             .selection-label { margin-right: 0; }
             .batch-actions .btn { width: 100%; justify-content: center; }
         }
-    </style>
-</head>
+</style>
+{% endblock %}
+{% block extra_js %}
+<script>
+const selectAll = document.getElementById("select-all");
+    const documentCheckboxes = document.querySelectorAll(".document-checkbox");
 
-<body>
+    if (selectAll) {
+        selectAll.addEventListener("change", function () {
+            documentCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = selectAll.checked;
+            });
+        });
 
-<header class="navbar">
-
-    <div class="brand">
-        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
-            
-            Nyaya<span>Vault</span>
-        </a>
-    </div>
-
-    <div class="user">
-        <div class="user-avatar">{{ request.user.get_full_name|default:request.user.username|slice:":1"|upper }}</div>
-        {{ request.user.get_full_name|default:request.user.username }}
-    </div>
-</header>
-
-
-<main class="main">
-
-    <a href="{% url 'case_list' %}" class="back">
+        documentCheckboxes.forEach(function (checkbox) {
+            checkbox.addEventListener("change", function () {
+                selectAll.checked = Array.from(documentCheckboxes).every(function (item) {
+                    return item.checked;
+                });
+            });
+        });
+    }
+</script>
+{% endblock %}
+<a href="{% url 'case_list' %}" class="back">
         &larr; Back to Cases
     </a>
 
@@ -639,27 +637,4 @@
     </div>
 
 </main>
-
-<script>
-    const selectAll = document.getElementById("select-all");
-    const documentCheckboxes = document.querySelectorAll(".document-checkbox");
-
-    if (selectAll) {
-        selectAll.addEventListener("change", function () {
-            documentCheckboxes.forEach(function (checkbox) {
-                checkbox.checked = selectAll.checked;
-            });
-        });
-
-        documentCheckboxes.forEach(function (checkbox) {
-            checkbox.addEventListener("change", function () {
-                selectAll.checked = Array.from(documentCheckboxes).every(function (item) {
-                    return item.checked;
-                });
-            });
-        });
-    }
-</script>
-
-</body>
-</html>
+{% endblock %}

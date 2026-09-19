@@ -1,0 +1,12 @@
+<div class="modal" id="{{ modal_id|default:'defaultModal' }}">
+    <div class="modal-backdrop" data-close-modal="{{ modal_id|default:'defaultModal' }}"></div>
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>{{ title }}</h3>
+            <button type="button" class="btn btn-secondary btn-sm" data-close-modal="{{ modal_id|default:'defaultModal' }}">Close</button>
+        </div>
+        <div class="modal-body">
+            {{ body }}
+        </div>
+    </div>
+</div>

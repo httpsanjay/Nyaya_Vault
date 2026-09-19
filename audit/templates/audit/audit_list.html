@@ -1,20 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Audit Logs | NyayaVault</title>
-
-    <style>
-
-        * {
+{% extends "base.html" %}
+{% block title %}Audit Logs | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -235,37 +224,9 @@
             }
 
         }
-
-    </style>
-
-</head>
-
-
-<body>
-
-
-<header class="navbar">
-
-    <div class="brand">
-        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
-            
-            Nyaya<span>Vault</span>
-        </a>
-    </div>
-
-    <div class="user">
-
-        {{ request.user.get_full_name|default:request.user.username }}
-
-    </div>
-
-</header>
-
-
-<main class="main">
-
-
-    <a
+</style>
+{% endblock %}
+<a
         href="{% url 'dashboard' %}"
         class="back"
     >
@@ -506,13 +467,4 @@
             </div>
 
         {% endif %}
-
-    </div>
-
-
-</main>
-
-
-</body>
-
-</html>
+{% endblock %}

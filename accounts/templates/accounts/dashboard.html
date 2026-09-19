@@ -1,16 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Dashboard | NyayaVault</title>
-
-    <style>
-
-        * {
+{% extends "base.html" %}
+{% block title %}Dashboard | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -390,253 +383,9 @@
             .card { padding: 18px; }
 
         }
-
-    </style>
-
-</head>
-
-
-<body>
-
-
-<!-- ================= NAVBAR ================= -->
-
-<header class="navbar">
-
-    <div class="brand">
-        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
-            
-            Nyaya<span>Vault</span>
-        </a>
-    </div>
-
-
-    <div class="user-area">
-
-        <div class="avatar">
-
-            {% if request.user.first_name %}
-                {{ request.user.first_name|first|upper }}
-            {% else %}
-                {{ request.user.username|first|upper }}
-            {% endif %}
-
-        </div>
-
-
-        <div class="user-info">
-
-            <div class="user-name">
-
-                {% if request.user.get_full_name %}
-                    {{ request.user.get_full_name }}
-                {% else %}
-                    {{ request.user.username }}
-                {% endif %}
-
-            </div>
-
-            <div class="user-role">
-                {{ request.user.get_role_display }}
-            </div>
-
-        </div>
-
-    </div>
-
-</header>
-
-
-
-
-
-<div class="layout">
-
-
-    <!-- ================= SIDEBAR ================= -->
-
-    <aside class="sidebar">
-
-
-        <div class="sidebar-title">
-            Main
-        </div>
-
-
-        <!-- Dashboard -->
-
-        <a
-            href="{% url 'dashboard' %}"
-            class="nav-item active"
-        >
-            <span class="nav-icon">▣</span>
-            Dashboard
-        </a>
-
-
-        <!-- Cases -->
-
-        <a
-            href="{% url 'case_list' %}"
-            class="nav-item"
-        >
-            <span class="nav-icon">▤</span>
-            Cases
-        </a>
-
-
-        <!-- Documents -->
-
-        <a
-            href="{% url 'case_list' %}"
-            class="nav-item"
-        >
-            <span class="nav-icon">▧</span>
-                Case Documents
-        </a>
-
-
-        <a
-            href="{% url 'search' %}"
-            class="nav-item"
-        >
-            <span class="nav-icon">▧</span>
-                Advanced Search
-        </a>
-
-
-
-        <!-- ================= IO ================= -->
-
-        {% if request.user.role == "IO" %}
-
-            <br>
-
-            <div class="sidebar-title">
-                Investigation
-            </div>
-
-
-            <a
-                href="{% url 'case_create' %}"
-                class="nav-item"
-            >
-                <span class="nav-icon">+</span>
-                Create Case
-            </a>
-
-            <a
-                href="{% url 'shared_with_me' %}"
-                class="nav-item"
-            >
-                <span class="nav-icon">+</span>
-                Shared Case
-            </a>
-
-        {% endif %}
-
-
-
-        <!-- ================= SHO ================= -->
-
-        {% if request.user.role == "SHO" %}
-
-            <br>
-
-            <div class="sidebar-title">
-                Management
-            </div>
-
-
-            <a
-                href="{% url 'case_list' %}"
-                class="nav-item"
-            >
-                <span class="nav-icon">✓</span>
-                Review Cases
-            </a>
-
-        {% endif %}
-
-
-
-        <!-- ================= FORENSIC ================= -->
-
-        {% if request.user.role == "FORENSIC_OFFICER" %}
-
-            <br>
-
-            <div class="sidebar-title">
-                Forensics
-            </div>
-
-
-            <a
-                href="{% url 'case_list' %}"
-                class="nav-item"
-            >
-                <span class="nav-icon">⌕</span>
-                Assigned Cases
-            </a>
-
-
-            <a
-                href="{% url 'case_list' %}"
-                class="nav-item"
-            >
-                <span class="nav-icon">▧</span>
-                Case Documents
-            </a>
-
-        {% endif %}
-
-
-
-        <!-- ================= SYSTEM ================= -->
-
-        <br>
-
-        <div class="sidebar-title">
-            System
-        </div>
-
-
-{% if request.user.role == "ADMIN" %}
-
-<a
-    href="{% url 'audit_list' %}"
-    class="nav-item"
->
-    <span class="nav-icon">◷</span>
-    Audit Logs
-</a>
-
-{% endif %}
-
-        
-
-
-        <!-- Logout -->
-
-        <a
-            href="{% url 'logout' %}"
-            class="nav-item"
-        >
-            <span class="nav-icon">↪</span>
-            Logout
-        </a>
-
-
-    </aside>
-
-
-
-    <!-- ================= MAIN ================= -->
-
-    <main class="main">
-
-
-        <!-- ================= HEADER ================= -->
+</style>
+{% endblock %}
+<!-- ================= NAVBAR ================= --><!-- ================= SIDEBAR ================= --><!-- ================= MAIN ================= --><!-- ================= HEADER ================= -->
 
         <div class="header">
 
@@ -810,11 +559,7 @@
 
         <!-- ================= CONTENT ================= -->
 
-        <!-- ================= CONTENT ================= -->
-
-<div class="content-grid">
-
-<!-- ================= CASES ================= -->
+        <!-- ================= CONTENT ================= --><!-- ================= CASES ================= -->
 
 <div class="card">
 
@@ -1069,10 +814,4 @@
 
 </div>
     </main>
-
-
-</div>
-
-
-</body>
-</html>
+{% endblock %}

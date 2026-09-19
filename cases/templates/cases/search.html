@@ -1,11 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search | NyayaVault</title>
-    <style>
-        * { box-sizing: border-box; }
+{% extends "base.html" %}
+{% block title %}Search | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+
+<style>
+* { box-sizing: border-box; }
         body { margin: 0; background: #f5f7fa; color: #1f2937; font-family: Arial, Helvetica, sans-serif; }
         .navbar { height: 65px; display: flex; align-items: center; justify-content: space-between; padding: 0 7%; background: #111827; color: #fff; }
         .brand { font-size: 21px; font-weight: 700; }
@@ -29,15 +28,10 @@
         .match { margin: 8px 0 0; padding: 10px 12px; background: #f8fafc; border-left: 3px solid #60a5fa; color: #4b5563; font-size: 14px; line-height: 1.5; }
         .empty { padding: 40px 0; color: #6b7280; }
         @media (max-width: 600px) { .main { padding: 28px 16px; } .search-form { flex-direction: column; } button { min-height: 44px; } .navbar { padding: 0 16px; } }
-    </style>
-</head>
-<body>
-<header class="navbar">
-    <div class="brand">Nyaya<span>Vault</span></div>
-    <div class="user">{{ request.user.get_full_name|default:request.user.username }}</div>
-</header>
-<main class="main">
-    <a class="back" href="{% url 'case_list' %}">&larr; Back to Cases</a>
+</style>
+
+{% endblock %}
+<a class="back" href="{% url 'case_list' %}">&larr; Back to Cases</a>
     <h1>Search results{% if query %} for: &ldquo;{{ query }}&rdquo;{% endif %}</h1>
     <form class="search-form" method="get">
         <input type="search" name="q" value="{{ query }}" placeholder="Search case number, document name, or evidence text..." autofocus>
@@ -70,6 +64,4 @@
     {% else %}
         <div class="empty">Enter a case number, document name, or evidence question to search.</div>
     {% endif %}
-</main>
-</body>
-</html>
+{% endblock %}

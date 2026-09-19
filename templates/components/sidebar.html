@@ -1,0 +1,81 @@
+<aside class="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-title">Main</div>
+        <nav>
+            <a href="{% url 'dashboard' %}" class="nav-item {% if request.path == '/dashboard/' or request.path == '/' %}active{% endif %}">
+                <span class="nav-icon">▣</span>
+                Dashboard
+            </a>
+            <a href="{% url 'case_list' %}" class="nav-item {% if '/cases/' in request.path or request.path == '/cases/' %}active{% endif %}">
+                <span class="nav-icon">▤</span>
+                Cases
+            </a>
+            <a href="{% url 'search' %}" class="nav-item {% if '/search/' in request.path %}active{% endif %}">
+                <span class="nav-icon">⌕</span>
+                Advanced Search
+            </a>
+            <a href="{% url 'shared_with_me' %}" class="nav-item {% if '/shared-with-me/' in request.path %}active{% endif %}">
+                <span class="nav-icon">⇄</span>
+                Shared Documents
+            </a>
+        </nav>
+    </div>
+
+    {% if request.user.role == 'IO' %}
+    <div class="sidebar-section">
+        <div class="sidebar-title">Investigation</div>
+        <nav>
+            <a href="{% url 'case_create' %}" class="nav-item {% if '/create/' in request.path %}active{% endif %}">
+                <span class="nav-icon">＋</span>
+                Create Case
+            </a>
+        </nav>
+    </div>
+    {% endif %}
+
+    {% if request.user.role == 'SHO' %}
+    <div class="sidebar-section">
+        <div class="sidebar-title">Management</div>
+        <nav>
+            <a href="{% url 'case_list' %}" class="nav-item">
+                <span class="nav-icon">✓</span>
+                Review Cases
+            </a>
+        </nav>
+    </div>
+    {% endif %}
+
+    {% if request.user.role == 'FORENSIC_OFFICER' %}
+    <div class="sidebar-section">
+        <div class="sidebar-title">Forensics</div>
+        <nav>
+            <a href="{% url 'case_list' %}" class="nav-item">
+                <span class="nav-icon">⌕</span>
+                Assigned Cases
+            </a>
+        </nav>
+    </div>
+    {% endif %}
+
+    {% if request.user.role == 'ADMIN' %}
+    <div class="sidebar-section">
+        <div class="sidebar-title">System</div>
+        <nav>
+            <a href="{% url 'audit_list' %}" class="nav-item {% if '/audit/' in request.path %}active{% endif %}">
+                <span class="nav-icon">◷</span>
+                Audit Logs
+            </a>
+        </nav>
+    </div>
+    {% endif %}
+
+    <div class="sidebar-section">
+        <div class="sidebar-title">Account</div>
+        <nav>
+            <a href="{% url 'logout' %}" class="nav-item">
+                <span class="nav-icon">↩</span>
+                Logout
+            </a>
+        </nav>
+    </div>
+</aside>

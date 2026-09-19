@@ -12,6 +12,27 @@ from .permissions import can_access_case, can_access_document_version
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*(?:[/-])[A-Za-z0-9_-]+$")
 _CHUNK_SIZE = 1200
 _CHUNK_OVERLAP = 200
+_STOPWORDS = {
+    "a", "about", "after", "again", "against", "all", "also", "am", "an", "and",
+    "any", "are", "as", "at", "be", "because", "been", "before", "being", "below",
+    "between", "both", "but", "by", "can", "cannot", "could", "did", "do", "does",
+    "doing", "down", "during", "each", "few", "for", "from", "further", "had", "has",
+    "have", "having", "he", "her", "here", "hers", "herself", "him", "himself", "his",
+    "how", "i", "if", "in", "into", "is", "it", "its", "itself", "just", "me", "more",
+    "most", "my", "myself", "no", "nor", "not", "of", "off", "on", "once", "only", "or",
+    "other", "our", "ours", "ourselves", "out", "over", "own", "same", "she", "should",
+    "so", "some", "such", "than", "that", "the", "their", "theirs", "them", "themselves",
+    "then", "there", "these", "they", "this", "those", "through", "to", "too", "under",
+    "until", "up", "very", "was", "we", "were", "what", "when", "where", "which", "while",
+    "who", "whom", "why", "will", "with", "you", "your", "yours", "yourself", "yourselves"
+}
+
+
+def _significant_query_terms(query):
+    return [
+        term for term in re.findall(r"\w+", (query or "").lower())
+        if len(term) > 1 and term not in _STOPWORDS
+    ]
 
 
 @lru_cache(maxsize=1)
@@ -43,6 +64,10 @@ def _chunks(text):
 
 
 def _semantic_matches(query, version):
+    terms = _significant_query_terms(query)
+    if len(terms) < 2:
+        return []
+
     chunks = _chunks(version.extracted_text)
     if not chunks:
         return []
@@ -60,12 +85,13 @@ def _semantic_matches(query, version):
         except Exception:
             scores = []
     else:
-        query_terms = set(re.findall(r"\w+", query.lower()))
+        query_terms = set(terms)
         scores = []
         for chunk in chunks:
             chunk_terms = set(re.findall(r"\w+", chunk.lower()))
+            shared = query_terms & {term for term in chunk_terms if term not in _STOPWORDS}
             scores.append(
-                len(query_terms & chunk_terms) / max(len(query_terms), 1)
+                len(shared) / max(len(query_terms), 1)
             )
 
     matches = []
@@ -82,7 +108,7 @@ def _semantic_matches(query, version):
 
 
 def _keyword_matches(query, version):
-    terms = [term for term in re.findall(r"\w+", query.lower()) if len(term) > 1]
+    terms = _significant_query_terms(query)
     text = (version.extracted_text or "").strip()
     lowered = text.lower()
     if not text or not terms or not any(term in lowered for term in terms):
@@ -105,7 +131,9 @@ def _keyword_matches(query, version):
 
 
 def _metadata_score(query, document):
-    terms = [term for term in re.findall(r"\w+", query.lower()) if len(term) > 1]
+    terms = _significant_query_terms(query)
+    if not terms:
+        return 0
     haystack = " ".join([
         document.name or "",
         document.document_type or "",
@@ -144,6 +172,10 @@ def unified_search(query, user=None, top_k=10):
     """Return authorized, case-grouped search results for the UI or API."""
     query = (query or "").strip()
     if not query or user is None or not user.is_authenticated:
+        return []
+
+    significant_terms = _significant_query_terms(query)
+    if not significant_terms and not _IDENTIFIER_RE.match(query):
         return []
 
     exact_cases = Case.objects.filter(case_number__iexact=query)

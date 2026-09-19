@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document Verification | NyayaVault</title>
-    <style>
-        * { box-sizing: border-box; }
+{% extends "base.html" %}
+{% block title %}Document Verification | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* { box-sizing: border-box; }
         body {
             margin: 0;
             background: #f3f6f9;
@@ -162,18 +160,22 @@
             .card { padding: 18px; }
             .info-grid { grid-template-columns: 1fr; }
         }
-    </style>
-</head>
-<body>
-    <header class="navbar">
-        <div class="brand">
-            <a href="{% url 'dashboard' %}" style="color: inherit; text-decoration: none;">Nyaya<span>Vault</span></a>
-        </div>
-        <div class="user">{{ request.user.get_full_name|default:request.user.username }}</div>
-    </header>
-
-    <main class="main">
-        <a class="back" href="{% url 'document_detail' document.pk %}">← Back to Document</a>
+</style>
+{% endblock %}
+{% block extra_js %}
+<script>
+const copyButton = document.getElementById("copy-hash");
+        const hashElement = document.getElementById("file-hash");
+        if (copyButton && hashElement) {
+            copyButton.addEventListener("click", async () => {
+                await navigator.clipboard.writeText(hashElement.textContent.trim());
+                copyButton.textContent = "Copied";
+                window.setTimeout(() => { copyButton.textContent = "Copy Hash"; }, 1600);
+            });
+        }
+</script>
+{% endblock %}
+<a class="back" href="{% url 'document_detail' document.pk %}">← Back to Document</a>
 
         <div class="header">
             <div>
@@ -186,10 +188,7 @@
                     {{ version.get_status_display }}
                 </span>
             </div>
-        </div>
-
-        <div class="layout">
-            <section>
+        </div><section>
                 <div class="card">
                     <h2>Document Preview</h2>
                     <div class="preview">
@@ -326,17 +325,4 @@
             </div>
         </div>
     </main>
-
-    <script>
-        const copyButton = document.getElementById("copy-hash");
-        const hashElement = document.getElementById("file-hash");
-        if (copyButton && hashElement) {
-            copyButton.addEventListener("click", async () => {
-                await navigator.clipboard.writeText(hashElement.textContent.trim());
-                copyButton.textContent = "Copied";
-                window.setTimeout(() => { copyButton.textContent = "Copy Hash"; }, 1600);
-            });
-        }
-    </script>
-</body>
-</html>
+{% endblock %}

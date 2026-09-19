@@ -1,15 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Register | NyayaVault</title>
-
-    <style>
-
-        * {
+{% extends "auth_base.html" %}
+{% block title %}Register | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -200,13 +194,386 @@
                 font-size: 24px;
             }
         }
+</style>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
 
-    </style>
-</head>
+    /*
+     * Fields that must be unique.
+     */
+    const uniqueFields = [
+        "username",
+        "email",
+        "id_number",
+        "phone_number",
+        "lawyer_registration_number",
+        "court_registration_number"
+    ];
 
 
-<body>
+    /*
+     * Store timers so we don't send a request
+     * for every single keystroke.
+     */
+    const timers = {};
 
+
+    /*
+     * Store validation state.
+     */
+    const validationState = {};
+
+
+    /*
+     * Check every unique field.
+     */
+    uniqueFields.forEach(function (field) {
+
+        const input = document.getElementById(field);
+
+        const message = document.getElementById(
+            field + "-error"
+        );
+
+
+        if (!input || !message) {
+            return;
+        }
+
+
+        validationState[field] = true;
+
+
+        input.addEventListener("input", function () {
+
+            const value = input.value.trim();
+
+
+            clearTimeout(timers[field]);
+
+
+            /*
+             * Empty optional fields are allowed.
+             */
+            if (!value) {
+
+                message.textContent = "";
+
+                message.className =
+                    "validation-message";
+
+                input.classList.remove(
+                    "valid",
+                    "invalid"
+                );
+
+                validationState[field] = true;
+
+                return;
+            }
+
+
+            /*
+             * Don't immediately show "checking".
+             * Wait 400ms after typing stops.
+             */
+            message.textContent = "Checking...";
+
+            message.className =
+                "validation-message";
+
+
+            input.classList.remove(
+                "valid",
+                "invalid"
+            );
+
+
+            validationState[field] = false;
+
+
+            timers[field] = setTimeout(function () {
+
+                fetch(
+                    "{% url 'check_unique_field' %}" +
+                    "?field=" +
+                    encodeURIComponent(field) +
+                    "&value=" +
+                    encodeURIComponent(value)
+                )
+
+                .then(function (response) {
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Server error"
+                        );
+                    }
+
+                    return response.json();
+
+                })
+
+                .then(function (data) {
+
+                    /*
+                     * Make sure the response is still
+                     * for the current value.
+                     */
+                    if (
+                        input.value.trim() !== value
+                    ) {
+                        return;
+                    }
+
+
+                    if (data.valid) {
+
+                        message.textContent =
+                            data.message || "Available.";
+
+                        message.className =
+                            "validation-message success";
+
+
+                        input.classList.remove(
+                            "invalid"
+                        );
+
+                        input.classList.add(
+                            "valid"
+                        );
+
+
+                        validationState[field] =
+                            true;
+
+                    } else {
+
+                        message.textContent =
+                            data.message ||
+                            "Already exists.";
+
+                        message.className =
+                            "validation-message error";
+
+
+                        input.classList.remove(
+                            "valid"
+                        );
+
+                        input.classList.add(
+                            "invalid"
+                        );
+
+
+                        validationState[field] =
+                            false;
+                    }
+
+                })
+
+                .catch(function (error) {
+
+                    console.error(
+                        "Validation error:",
+                        error
+                    );
+
+                    /*
+                     * Don't block registration just
+                     * because the validation request failed.
+                     *
+                     * Django + database validation still
+                     * protects the actual submission.
+                     */
+
+                    message.textContent =
+                        "Unable to check right now.";
+
+                    message.className =
+                        "validation-message error";
+
+                    input.classList.remove(
+                        "valid"
+                    );
+
+                    input.classList.add(
+                        "invalid"
+                    );
+
+                    validationState[field] =
+                        false;
+
+                });
+
+            }, 400);
+
+        });
+
+    });
+
+
+    /*
+     * Password confirmation.
+     */
+    const password1 =
+        document.getElementById("password1");
+
+    const password2 =
+        document.getElementById("password2");
+
+    const passwordError =
+        document.getElementById("password-error");
+
+
+    function checkPasswords() {
+
+        if (!password2.value) {
+
+            passwordError.textContent = "";
+
+            passwordError.className =
+                "validation-message";
+
+            password2.classList.remove(
+                "valid",
+                "invalid"
+            );
+
+            return;
+        }
+
+
+        if (password1.value !== password2.value) {
+
+            passwordError.textContent =
+                "Passwords do not match.";
+
+            passwordError.className =
+                "validation-message error";
+
+            password2.classList.remove(
+                "valid"
+            );
+
+            password2.classList.add(
+                "invalid"
+            );
+
+        } else {
+
+            passwordError.textContent =
+                "Passwords match.";
+
+            passwordError.className =
+                "validation-message success";
+
+            password2.classList.remove(
+                "invalid"
+            );
+
+            password2.classList.add(
+                "valid"
+            );
+        }
+    }
+
+
+    password1.addEventListener(
+        "input",
+        checkPasswords
+    );
+
+    password2.addEventListener(
+        "input",
+        checkPasswords
+    );
+
+
+    /*
+     * Final frontend check before submitting.
+     */
+    const form =
+        document.getElementById("registerForm");
+
+    const submitButton =
+        document.getElementById("submitButton");
+
+
+    form.addEventListener("submit", function (event) {
+
+        let hasError = false;
+
+
+        /*
+         * Check unique fields.
+         */
+        uniqueFields.forEach(function (field) {
+
+            const input =
+                document.getElementById(field);
+
+            /*
+             * Optional empty fields are allowed.
+             */
+            if (
+                input &&
+                input.value.trim() &&
+                validationState[field] === false
+            ) {
+                hasError = true;
+            }
+
+        });
+
+
+        /*
+         * Check passwords.
+         */
+        if (
+            password1.value !==
+            password2.value
+        ) {
+            hasError = true;
+        }
+
+
+        if (hasError) {
+
+            event.preventDefault();
+
+            /*
+             * Find first invalid field.
+             */
+            const invalidField =
+                document.querySelector(
+                    "input.invalid"
+                );
+
+            if (invalidField) {
+                invalidField.focus();
+            }
+
+            return;
+        }
+
+
+        /*
+         * Prevent double-click submissions.
+         */
+        submitButton.disabled = true;
+
+        submitButton.textContent =
+            "Creating Account...";
+
+    });
+
+});
+</script>
+{% endblock %}
 <div class="container">
 
     <div class="logo">
@@ -775,386 +1142,4 @@
     </div>
 
 </div>
-
-
-<script>
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    /*
-     * Fields that must be unique.
-     */
-    const uniqueFields = [
-        "username",
-        "email",
-        "id_number",
-        "phone_number",
-        "lawyer_registration_number",
-        "court_registration_number"
-    ];
-
-
-    /*
-     * Store timers so we don't send a request
-     * for every single keystroke.
-     */
-    const timers = {};
-
-
-    /*
-     * Store validation state.
-     */
-    const validationState = {};
-
-
-    /*
-     * Check every unique field.
-     */
-    uniqueFields.forEach(function (field) {
-
-        const input = document.getElementById(field);
-
-        const message = document.getElementById(
-            field + "-error"
-        );
-
-
-        if (!input || !message) {
-            return;
-        }
-
-
-        validationState[field] = true;
-
-
-        input.addEventListener("input", function () {
-
-            const value = input.value.trim();
-
-
-            clearTimeout(timers[field]);
-
-
-            /*
-             * Empty optional fields are allowed.
-             */
-            if (!value) {
-
-                message.textContent = "";
-
-                message.className =
-                    "validation-message";
-
-                input.classList.remove(
-                    "valid",
-                    "invalid"
-                );
-
-                validationState[field] = true;
-
-                return;
-            }
-
-
-            /*
-             * Don't immediately show "checking".
-             * Wait 400ms after typing stops.
-             */
-            message.textContent = "Checking...";
-
-            message.className =
-                "validation-message";
-
-
-            input.classList.remove(
-                "valid",
-                "invalid"
-            );
-
-
-            validationState[field] = false;
-
-
-            timers[field] = setTimeout(function () {
-
-                fetch(
-                    "{% url 'check_unique_field' %}" +
-                    "?field=" +
-                    encodeURIComponent(field) +
-                    "&value=" +
-                    encodeURIComponent(value)
-                )
-
-                .then(function (response) {
-
-                    if (!response.ok) {
-                        throw new Error(
-                            "Server error"
-                        );
-                    }
-
-                    return response.json();
-
-                })
-
-                .then(function (data) {
-
-                    /*
-                     * Make sure the response is still
-                     * for the current value.
-                     */
-                    if (
-                        input.value.trim() !== value
-                    ) {
-                        return;
-                    }
-
-
-                    if (data.valid) {
-
-                        message.textContent =
-                            data.message || "Available.";
-
-                        message.className =
-                            "validation-message success";
-
-
-                        input.classList.remove(
-                            "invalid"
-                        );
-
-                        input.classList.add(
-                            "valid"
-                        );
-
-
-                        validationState[field] =
-                            true;
-
-                    } else {
-
-                        message.textContent =
-                            data.message ||
-                            "Already exists.";
-
-                        message.className =
-                            "validation-message error";
-
-
-                        input.classList.remove(
-                            "valid"
-                        );
-
-                        input.classList.add(
-                            "invalid"
-                        );
-
-
-                        validationState[field] =
-                            false;
-                    }
-
-                })
-
-                .catch(function (error) {
-
-                    console.error(
-                        "Validation error:",
-                        error
-                    );
-
-                    /*
-                     * Don't block registration just
-                     * because the validation request failed.
-                     *
-                     * Django + database validation still
-                     * protects the actual submission.
-                     */
-
-                    message.textContent =
-                        "Unable to check right now.";
-
-                    message.className =
-                        "validation-message error";
-
-                    input.classList.remove(
-                        "valid"
-                    );
-
-                    input.classList.add(
-                        "invalid"
-                    );
-
-                    validationState[field] =
-                        false;
-
-                });
-
-            }, 400);
-
-        });
-
-    });
-
-
-    /*
-     * Password confirmation.
-     */
-    const password1 =
-        document.getElementById("password1");
-
-    const password2 =
-        document.getElementById("password2");
-
-    const passwordError =
-        document.getElementById("password-error");
-
-
-    function checkPasswords() {
-
-        if (!password2.value) {
-
-            passwordError.textContent = "";
-
-            passwordError.className =
-                "validation-message";
-
-            password2.classList.remove(
-                "valid",
-                "invalid"
-            );
-
-            return;
-        }
-
-
-        if (password1.value !== password2.value) {
-
-            passwordError.textContent =
-                "Passwords do not match.";
-
-            passwordError.className =
-                "validation-message error";
-
-            password2.classList.remove(
-                "valid"
-            );
-
-            password2.classList.add(
-                "invalid"
-            );
-
-        } else {
-
-            passwordError.textContent =
-                "Passwords match.";
-
-            passwordError.className =
-                "validation-message success";
-
-            password2.classList.remove(
-                "invalid"
-            );
-
-            password2.classList.add(
-                "valid"
-            );
-        }
-    }
-
-
-    password1.addEventListener(
-        "input",
-        checkPasswords
-    );
-
-    password2.addEventListener(
-        "input",
-        checkPasswords
-    );
-
-
-    /*
-     * Final frontend check before submitting.
-     */
-    const form =
-        document.getElementById("registerForm");
-
-    const submitButton =
-        document.getElementById("submitButton");
-
-
-    form.addEventListener("submit", function (event) {
-
-        let hasError = false;
-
-
-        /*
-         * Check unique fields.
-         */
-        uniqueFields.forEach(function (field) {
-
-            const input =
-                document.getElementById(field);
-
-            /*
-             * Optional empty fields are allowed.
-             */
-            if (
-                input &&
-                input.value.trim() &&
-                validationState[field] === false
-            ) {
-                hasError = true;
-            }
-
-        });
-
-
-        /*
-         * Check passwords.
-         */
-        if (
-            password1.value !==
-            password2.value
-        ) {
-            hasError = true;
-        }
-
-
-        if (hasError) {
-
-            event.preventDefault();
-
-            /*
-             * Find first invalid field.
-             */
-            const invalidField =
-                document.querySelector(
-                    "input.invalid"
-                );
-
-            if (invalidField) {
-                invalidField.focus();
-            }
-
-            return;
-        }
-
-
-        /*
-         * Prevent double-click submissions.
-         */
-        submitButton.disabled = true;
-
-        submitButton.textContent =
-            "Creating Account...";
-
-    });
-
-});
-
-</script>
-
-</body>
-</html>
+{% endblock %}

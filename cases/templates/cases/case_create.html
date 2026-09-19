@@ -1,22 +1,9 @@
-
-<!DOCTYPE html>
-
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Create Case | NyayaVault</title>
-
-    <style>
-
-        * {
+{% extends "base.html" %}
+{% block title %}Create Case | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -174,34 +161,9 @@
             .actions { flex-direction: column-reverse; gap: 10px; align-items: stretch; }
             .btn { width: 100%; text-align: center; }
         }
-
-    </style>
-
-</head>
-
-
-<body>
-
-
-<header class="navbar">
-
-    <div class="brand">
-        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
-            
-            Nyaya<span>Vault</span>
-        </a>
-    </div>
-
-    <div class="user">
-        {{ request.user.get_full_name|default:request.user.username }}
-    </div>
-
-</header>
-
-
-<main class="main">
-
-    <div class="header">
+</style>
+{% endblock %}
+<div class="header">
 
         <h1>Create New Case</h1>
 
@@ -264,12 +226,4 @@
             </div>
 
         </form>
-
-    </div>
-
-</main>
-
-
-</body>
-
-</html>
+{% endblock %}

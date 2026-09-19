@@ -1,20 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Upload File | NyayaVault</title>
-
-    <style>
-
-        * {
+{% extends "base.html" %}
+{% block title %}Upload File | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -294,39 +283,9 @@
             }
 
         }
-
-    </style>
-
-</head>
-
-
-<body>
-
-
-<!-- ================= NAVBAR ================= -->
-
-<header class="navbar">
-
-    <div class="brand">
-        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
-            
-            Nyaya<span>Vault</span>
-        </a>
-    </div>
-
-    <div class="user">
-        {{ request.user.get_full_name|default:request.user.username }}
-    </div>
-
-</header>
-
-
-<!-- ================= MAIN ================= -->
-
-<main class="main">
-
-
-    <!-- BACK -->
+</style>
+{% endblock %}
+<!-- ================= NAVBAR ================= --><!-- ================= MAIN ================= --><!-- BACK -->
 
     <a
         href="{% url 'case_detail' document.case.pk %}"
@@ -507,14 +466,4 @@
 
 
         </form>
-
-
-    </div>
-
-
-</main>
-
-
-</body>
-
-</html>
+{% endblock %}

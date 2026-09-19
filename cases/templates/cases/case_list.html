@@ -1,21 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Cases | NyayaVault</title>
-
-
-    <style>
-
-        * {
+{% extends "base.html" %}
+{% block title %}Cases | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -897,149 +885,17 @@
             .access-info { margin-top: 14px; }
 
         }
-
-    </style>
-
-</head>
-
-
-<body>
-
-
-<div class="layout">
-
-
-    <!-- =====================================================
+</style>
+{% endblock %}
+<!-- =====================================================
          SIDEBAR
-    ====================================================== -->
-
-    <aside class="sidebar">
-
-
-        <div class="sidebar-brand">
-
-            Nyaya<span>Vault</span>
-
-        </div>
-
-
-        <nav class="nav">
-
-
-            <div class="nav-title">
-
-                Main Menu
-
-            </div>
-
-
-            <a
-                href="{% url 'dashboard' %}"
-                class="nav-link"
-            >
-
-                <span class="nav-icon">⌂</span>
-
-                <span>Dashboard</span>
-
-            </a>
-
-
-            <a
-                href="{% url 'case_list' %}"
-                class="nav-link active"
-            >
-
-                <span class="nav-icon">▣</span>
-
-                <span>Cases</span>
-
-            </a>
-
-
-            {% if request.user.role == "IO" %}
-
-                <a
-                    href="{% url 'case_create' %}"
-                    class="nav-link"
-                >
-
-                    <span class="nav-icon">＋</span>
-
-                    <span>New Case</span>
-
-                </a>
-
-            {% endif %}
-
-
-        </nav>
-
-
-        <div class="sidebar-bottom">
-
-            <div class="user-box">
-
-                <div>
-
-                    {{ request.user.get_full_name|default:request.user.username }}
-
-                </div>
-
-
-                <div class="user-role">
-
-                    {{ request.user.role }}
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-    </aside>
-
-
-    <!-- =====================================================
+    ====================================================== --><!-- =====================================================
          CONTENT
-    ====================================================== -->
-
-    <div class="content">
-
-
-        <!-- =================================================
+    ====================================================== --><!-- =================================================
              NAVBAR
-        ================================================== -->
-
-        <header class="navbar">
-
-
-            <div class="navbar-title">
-
-                Case Management
-
-            </div>
-
-
-            <div class="user">
-
-                {{ request.user.get_full_name|default:request.user.username }}
-
-            </div>
-
-
-        </header>
-
-
-        <!-- =================================================
+        ================================================== --><!-- =================================================
              MAIN
-        ================================================== -->
-
-        <main class="main">
-
-
-            <!-- =================================================
+        ================================================== --><!-- =================================================
                  HEADER
             ================================================== -->
 
@@ -1571,11 +1427,4 @@
 
 
     </div>
-
-
-</div>
-
-
-</body>
-
-</html>
+{% endblock %}

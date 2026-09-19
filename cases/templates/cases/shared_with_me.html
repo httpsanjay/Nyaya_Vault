@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Shared With Me</title>
+{% extends "base.html" %}
+{% block title %}Shared With Me{% endblock %}
+{% block content %}
+{% block extra_css %}
 <style>
-        * {
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -609,17 +608,11 @@
 
         }
 </style>
-</head>
-<body>
-
+{% endblock %}
 <div class="navbar">
     <div class="brand">Case<span>Docs</span></div>
     <div class="user">{{ request.user.get_full_name|default:request.user.username }}</div>
-</div>
-
-<main class="main">
-
-    <div class="header">
+</div><div class="header">
         <div>
             <h1>Shared With Me</h1>
             <p class="subtitle">Documents other parties have shared with you</p>
@@ -664,7 +657,4 @@
             <div class="empty">No documents have been shared with you.</div>
         </div>
     {% endif %}
-
-</main>
-</body>
-</html>
+{% endblock %}

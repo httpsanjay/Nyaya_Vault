@@ -1,0 +1,3 @@
+<span class="badge {% if status == 'APPROVED' or status == 'SIGNED' %}badge-success{% elif status == 'PENDING' or status == 'REVIEW' %}badge-warning{% elif status == 'REJECTED' or status == 'FAILED' %}badge-danger{% else %}badge-info{% endif %}">
+    {{ label|default:status|default:'Status' }}
+</span>

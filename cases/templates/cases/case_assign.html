@@ -1,20 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Assign Officers | NyayaVault</title>
-
-    <style>
-
-        * {
+{% extends "base.html" %}
+{% block title %}Assign Officers | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -192,32 +181,9 @@
             .buttons { flex-direction: column; }
             button, .cancel { width: 100%; text-align: center; }
         }
-
-    </style>
-
-</head>
-
-<body>
-
-<header class="navbar">
-
-    <div class="brand">
-        <a href="{% url 'dashboard' %}" style="text-decoration: none; color: inherit;">
-            
-            Nyaya<span>Vault</span>
-        </a>
-    </div>
-
-    <div class="user">
-        {{ request.user.get_full_name|default:request.user.username }}
-    </div>
-
-</header>
-
-
-<main class="main">
-
-    <a
+</style>
+{% endblock %}
+<a
         href="{% url 'case_detail' case.pk %}"
         class="back"
     >
@@ -272,11 +238,4 @@
             </div>
 
         </form>
-
-    </div>
-
-</main>
-
-</body>
-
-</html>
+{% endblock %}

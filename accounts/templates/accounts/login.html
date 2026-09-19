@@ -1,13 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Login | NyayaVault</title>
-
-    <style>
-        * {
+{% extends "auth_base.html" %}
+{% block title %}Login | NyayaVault{% endblock %}
+{% block content %}
+{% block extra_css %}
+<style>
+* {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -121,12 +117,8 @@
             .container { width: 100%; padding: 28px 20px; }
             .logo h1 { font-size: 24px; }
         }
-    </style>
-</head>
-
-
-<body>
-
+</style>
+{% endblock %}
 <div class="container">
 
     <div class="logo">
@@ -192,11 +184,4 @@
             Register
         </a>
     </div>
-
-</div>
-
-</body>
-
-
-
-</html>
+{% endblock %}
