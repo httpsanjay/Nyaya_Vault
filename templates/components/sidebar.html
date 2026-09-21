@@ -21,7 +21,18 @@
         </nav>
     </div>
 
-    {% if request%}
+    <div class="sidebar-section">
+    <div class="sidebar-title">Advance</div>
+    <nav>
+        <a href="{% url 'mcp_page' %}"
+           class="nav-item {% if request.resolver_match.url_name == 'mcp_page' %}active{% endif %}">
+            <span class="nav-icon">◈</span>
+            MCP
+        </a>
+    </nav>
+    </div>
+
+    
 
     {% if request.user.role == 'IO' %}
     <div class="sidebar-section">

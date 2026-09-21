@@ -9,6 +9,7 @@ from .views import (
 from accounts import views
 
 urlpatterns = [
+    path("mcp/", views.mcp_page, name="mcp_page"),
     path(
         "", 
         views.index_view,
@@ -39,4 +40,5 @@ urlpatterns = [
         logout_view,
         name="logout"
     ),
+    
 ]

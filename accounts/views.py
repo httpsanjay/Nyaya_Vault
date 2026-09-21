@@ -59,6 +59,12 @@ def login_view(request):
         }
     )
 
+def mcp_page(request):
+    return render(
+        request,
+        "accounts/mcp_page.html"
+    )
+
 
 def register_view(request):
 
