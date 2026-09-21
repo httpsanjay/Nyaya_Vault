@@ -21,6 +21,8 @@
         </nav>
     </div>
 
+    {% if request%}
+
     {% if request.user.role == 'IO' %}
     <div class="sidebar-section">
         <div class="sidebar-title">Investigation</div>

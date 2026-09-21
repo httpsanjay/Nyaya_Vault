@@ -1,0 +1,1734 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NyayaVault MCP</title>
+
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --sidebar: #111827;
+            --sidebar-hover: #1f2937;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --primary: #7c3aed;
+            --primary-light: #ede9fe;
+            --green: #16a34a;
+            --green-light: #dcfce7;
+            --blue: #2563eb;
+            --blue-light: #dbeafe;
+            --orange: #ea580c;
+            --orange-light: #ffedd5;
+            --red: #dc2626;
+            --red-light: #fee2e2;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            --radius: 14px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* =========================
+           LAYOUT
+        ========================= */
+
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* =========================
+           SIDEBAR
+        ========================= */
+
+        .sidebar {
+            width: 250px;
+            background: var(--sidebar);
+            color: white;
+            padding: 20px 14px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 6px 10px 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 18px;
+        }
+
+        .brand-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(
+                135deg,
+                #8b5cf6,
+                #6366f1
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 18px rgba(124,58,237,0.35);
+        }
+
+        .brand-logo svg {
+            width: 23px;
+            height: 23px;
+        }
+
+        .brand-text {
+            line-height: 1.1;
+        }
+
+        .brand-title {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .brand-subtitle {
+            color: #9ca3af;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .nav-title {
+            font-size: 10px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0 11px 8px;
+        }
+
+        .nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 10px 11px;
+            color: #9ca3af;
+            text-decoration: none;
+            border-radius: 9px;
+            font-size: 13px;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover {
+            background: var(--sidebar-hover);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(124,58,237,0.2);
+            color: white;
+        }
+
+        .nav-item.active .nav-icon {
+            color: #a78bfa;
+        }
+
+        .nav-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-bottom {
+            margin-top: auto;
+        }
+
+        .mcp-badge {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 11px;
+            padding: 12px;
+            margin: 8px 5px;
+        }
+
+        .mcp-badge-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 7px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.12);
+        }
+
+        .mcp-badge-title {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .mcp-badge-text {
+            color: #9ca3af;
+            font-size: 10px;
+        }
+
+        /* =========================
+           MAIN
+        ========================= */
+
+        .main {
+            margin-left: 250px;
+            width: calc(100% - 250px);
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* =========================
+           HEADER
+        ========================= */
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .header-left {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .page-logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: linear-gradient(
+                135deg,
+                #8b5cf6,
+                #6366f1
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(124,58,237,0.18);
+        }
+
+        .page-logo svg {
+            width: 30px;
+            height: 30px;
+        }
+
+        .page-title {
+            font-size: 25px;
+            font-weight: 750;
+            letter-spacing: -0.03em;
+        }
+
+        .page-description {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 13px;
+            border-radius: 9px;
+            background: var(--green-light);
+            color: #166534;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* =========================
+           CARDS
+        ========================= */
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 23px;
+            font-weight: 750;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-meta {
+            margin-top: 5px;
+            font-size: 10px;
+            color: var(--muted);
+        }
+
+        .section {
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .section-description {
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 3px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        /* =========================
+           SERVER INFO
+        ========================= */
+
+        .server-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 15px;
+        }
+
+        .server-info {
+            padding: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 11px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .info-value {
+            font-size: 12px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .endpoint {
+            font-family: "SFMono-Regular", Consolas, monospace;
+            background: #f3f4f6;
+            padding: 5px 8px;
+            border-radius: 6px;
+            color: #374151;
+            font-size: 11px;
+            word-break: break-all;
+        }
+
+        /* =========================
+           AUTH CARD
+        ========================= */
+
+        .security-card {
+            padding: 20px;
+        }
+
+        .security-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .security-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 9px;
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .security-title {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .security-subtitle {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .security-item {
+            display: flex;
+            gap: 10px;
+            padding: 9px 0;
+            font-size: 11px;
+            color: #4b5563;
+        }
+
+        .check {
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        /* =========================
+           TOOLS
+        ========================= */
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .tool-card {
+            padding: 16px;
+            transition: 0.2s;
+        }
+
+        .tool-card:hover {
+            border-color: #c4b5fd;
+            transform: translateY(-1px);
+        }
+
+        .tool-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 9px;
+        }
+
+        .tool-name {
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: #5b21b6;
+        }
+
+        .tool-tag {
+            font-size: 9px;
+            padding: 3px 7px;
+            border-radius: 20px;
+            background: var(--blue-light);
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+
+        .tool-description {
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .tool-parameters {
+            margin-top: 11px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .parameter {
+            font-family: monospace;
+            font-size: 9px;
+            background: #f3f4f6;
+            color: #4b5563;
+            padding: 3px 6px;
+            border-radius: 5px;
+        }
+
+        /* =========================
+           PROMPTS
+        ========================= */
+
+        .prompts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .prompt-card {
+            padding: 16px;
+        }
+
+        .prompt-name {
+            font-family: monospace;
+            color: #5b21b6;
+            font-weight: 700;
+            font-size: 12px;
+            margin-bottom: 7px;
+        }
+
+        .prompt-description {
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* =========================
+           ARCHITECTURE
+        ========================= */
+
+        .architecture {
+            padding: 22px;
+        }
+
+        .architecture-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .arch-node {
+            min-width: 150px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            background: #fafafa;
+        }
+
+        .arch-node.primary {
+            background: var(--primary-light);
+            border-color: #ddd6fe;
+        }
+
+        .arch-node-title {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .arch-node-text {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 9px;
+        }
+
+        .arrow {
+            color: #9ca3af;
+            font-size: 18px;
+        }
+
+        /* =========================
+           CLIENT CODE
+        ========================= */
+
+        .code-card {
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-title {
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .copy-button {
+            border: 0;
+            background: #f3f4f6;
+            padding: 6px 9px;
+            border-radius: 6px;
+            font-size: 10px;
+            cursor: pointer;
+            color: #4b5563;
+        }
+
+        .copy-button:hover {
+            background: #e5e7eb;
+        }
+
+        pre {
+            margin: 0;
+            padding: 18px;
+            background: #111827;
+            color: #e5e7eb;
+            overflow-x: auto;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 11px;
+            line-height: 1.65;
+        }
+
+        /* =========================
+           FOOTER
+        ========================= */
+
+        .footer {
+            padding: 15px 0 5px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 10px;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 1100px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .server-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .sidebar {
+                width: 68px;
+                padding: 15px 8px;
+            }
+
+            .brand {
+                justify-content: center;
+                padding: 6px 0 20px;
+            }
+
+            .brand-text,
+            .nav-title,
+            .nav-item span,
+            .mcp-badge {
+                display: none;
+            }
+
+            .nav-item {
+                justify-content: center;
+            }
+
+            .main {
+                margin-left: 68px;
+                width: calc(100% - 68px);
+                padding: 20px;
+            }
+
+            .tools-grid,
+            .prompts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 550px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main {
+                padding: 14px;
+            }
+
+            .architecture-flow {
+                flex-direction: column;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="layout">
+
+    <!-- =========================
+         SIDEBAR
+    ========================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <!-- MCP LOGO -->
+            <div class="brand-logo">
+                <svg viewBox="0 0 32 32" fill="none"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M9 5C6.79 5 5 6.79 5 9V16C5 18.21 6.79 20 9 20H12V27"
+                        stroke="white"
+                        stroke-width="2.4"
+                        stroke-linecap="round"
+                    />
+
+                    <path
+                        d="M23 5C25.21 5 27 6.79 27 9V16C27 18.21 25.21 20 23 20H20V27"
+                        stroke="white"
+                        stroke-width="2.4"
+                        stroke-linecap="round"
+                    />
+
+                    <path
+                        d="M10 11H22"
+                        stroke="white"
+                        stroke-width="2.4"
+                        stroke-linecap="round"
+                    />
+
+                    <circle cx="9" cy="9" r="2.2" fill="white"/>
+                    <circle cx="23" cy="9" r="2.2" fill="white"/>
+                </svg>
+            </div>
+
+            <div class="brand-text">
+                <div class="brand-title">NyayaVault</div>
+                <div class="brand-subtitle">MCP Gateway</div>
+            </div>
+
+        </div>
+
+
+        <div class="nav-title">
+            Developer
+        </div>
+
+        <nav class="nav">
+
+            <a href="#" class="nav-item active">
+
+                <svg class="nav-icon"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                </svg>
+
+                <span>MCP Overview</span>
+
+            </a>
+
+
+            <a href="#tools" class="nav-item">
+
+                <svg class="nav-icon"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2">
+                    <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4L15 12l-3-3 2.7-2.7z"/>
+                </svg>
+
+                <span>Tools</span>
+
+            </a>
+
+
+            <a href="#prompts" class="nav-item">
+
+                <svg class="nav-icon"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2">
+                    <path d="M4 4h16v16H4z"/>
+                    <path d="M8 8h8M8 12h8M8 16h5"/>
+                </svg>
+
+                <span>Prompts</span>
+
+            </a>
+
+
+            <a href="#security" class="nav-item">
+
+                <svg class="nav-icon"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2">
+                    <rect x="4" y="10" width="16" height="10" rx="2"/>
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                </svg>
+
+                <span>Security</span>
+
+            </a>
+
+
+            <a href="#connection" class="nav-item">
+
+                <svg class="nav-icon"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V20h-2.5v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.6-1H6v-2.5h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V5h2.5v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1V14h-.1a1.7 1.7 0 0 0-1.6 1z"/>
+                </svg>
+
+                <span>Connection</span>
+
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="mcp-badge">
+
+                <div class="mcp-badge-top">
+                    <span class="status-dot"></span>
+
+                    <span class="mcp-badge-title">
+                        MCP Server Online
+                    </span>
+                </div>
+
+                <div class="mcp-badge-text">
+                    Streamable HTTP
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================== -->
+
+    <main class="main">
+
+        <div class="container">
+
+            <!-- HEADER -->
+
+            <header class="page-header">
+
+                <div class="header-left">
+
+                    <div class="page-logo">
+
+                        <svg viewBox="0 0 32 32"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg">
+
+                            <path
+                                d="M9 5C6.79 5 5 6.79 5 9V16C5 18.21 6.79 20 9 20H12V27"
+                                stroke="white"
+                                stroke-width="2.4"
+                                stroke-linecap="round"
+                            />
+
+                            <path
+                                d="M23 5C25.21 5 27 6.79 27 9V16C27 18.21 25.21 20 23 20H20V27"
+                                stroke="white"
+                                stroke-width="2.4"
+                                stroke-linecap="round"
+                            />
+
+                            <path
+                                d="M10 11H22"
+                                stroke="white"
+                                stroke-width="2.4"
+                                stroke-linecap="round"
+                            />
+
+                            <circle cx="9" cy="9" r="2.2" fill="white"/>
+                            <circle cx="23" cy="9" r="2.2" fill="white"/>
+
+                        </svg>
+
+                    </div>
+
+                    <div>
+
+                        <h1 class="page-title">
+                            Model Context Protocol
+                        </h1>
+
+                        <p class="page-description">
+                            Secure AI integration gateway for NyayaVault
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="server-status">
+
+                    <span class="status-dot"></span>
+
+                    Server Online
+
+                </div>
+
+            </header>
+
+
+            <!-- STATISTICS -->
+
+            <div class="grid">
+
+                <div class="stat-card">
+
+                    <div class="stat-label">
+                        MCP Server
+                    </div>
+
+                    <div class="stat-value">
+                        FastMCP
+                    </div>
+
+                    <div class="stat-meta">
+                        Native MCP implementation
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-label">
+                        Transport
+                    </div>
+
+                    <div class="stat-value">
+                        HTTP
+                    </div>
+
+                    <div class="stat-meta">
+                        Streamable HTTP
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-label">
+                        Tools
+                    </div>
+
+                    <div class="stat-value">
+                        6
+                    </div>
+
+                    <div class="stat-meta">
+                        Available operations
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-label">
+                        Prompts
+                    </div>
+
+                    <div class="stat-value">
+                        4
+                    </div>
+
+                    <div class="stat-meta">
+                        AI workflows
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- SERVER INFORMATION -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-title">
+                        Server Information
+                    </div>
+
+                    <div class="section-description">
+                        MCP gateway configuration and connection details
+                    </div>
+
+                </div>
+
+
+                <div class="server-grid">
+
+                    <div class="card server-info">
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                Server Name
+                            </span>
+
+                            <span class="info-value">
+                                NyayaVault MCP
+                            </span>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                Protocol
+                            </span>
+
+                            <span class="info-value">
+                                Model Context Protocol
+                            </span>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                Framework
+                            </span>
+
+                            <span class="info-value">
+                                FastMCP 4.x
+                            </span>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                Transport
+                            </span>
+
+                            <span class="info-value">
+                                Streamable HTTP
+                            </span>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                MCP Endpoint
+                            </span>
+
+                            <span class="info-value">
+
+                                <span class="endpoint">
+                                    /mcp
+                                </span>
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                Backend
+                            </span>
+
+                            <span class="info-value">
+                                Django + PostgreSQL
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SECURITY -->
+
+                    <div class="card security-card" id="security">
+
+                        <div class="security-header">
+
+                            <div class="security-icon">
+
+                                <svg width="18"
+                                     height="18"
+                                     viewBox="0 0 24 24"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     stroke-width="2">
+
+                                    <rect x="4" y="10"
+                                          width="16"
+                                          height="10"
+                                          rx="2"/>
+
+                                    <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+
+                                </svg>
+
+                            </div>
+
+                            <div>
+
+                                <div class="security-title">
+                                    Security
+                                </div>
+
+                                <div class="security-subtitle">
+                                    MCP gateway protection
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="security-item">
+                            <span class="check">✓</span>
+                            <span>Bearer token authentication</span>
+                        </div>
+
+                        <div class="security-item">
+                            <span class="check">✓</span>
+                            <span>HTTPS / TLS transport</span>
+                        </div>
+
+                        <div class="security-item">
+                            <span class="check">✓</span>
+                            <span>Environment-based secrets</span>
+                        </div>
+
+                        <div class="security-item">
+                            <span class="check">✓</span>
+                            <span>Django authorization layer</span>
+                        </div>
+
+                        <div class="security-item">
+                            <span class="check">✓</span>
+                            <span>No REST API exposure</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- TOOLS -->
+
+            <section class="section" id="tools">
+
+                <div class="section-header">
+
+                    <div class="section-title">
+                        MCP Tools
+                    </div>
+
+                    <div class="section-description">
+                        Server-side operations available to authorized AI clients
+                    </div>
+
+                </div>
+
+
+                <div class="tools-grid">
+
+                    <div class="card tool-card">
+
+                        <div class="tool-top">
+
+                            <div class="tool-name">
+                                search_cases
+                            </div>
+
+                            <div class="tool-tag">
+                                READ
+                            </div>
+
+                        </div>
+
+                        <div class="tool-description">
+                            Search cases using case number, title,
+                            description, type, or relevant keywords.
+                        </div>
+
+                        <div class="tool-parameters">
+                            <span class="parameter">query: string</span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="card tool-card">
+
+                        <div class="tool-top">
+
+                            <div class="tool-name">
+                                get_case
+                            </div>
+
+                            <div class="tool-tag">
+                                READ
+                            </div>
+
+                        </div>
+
+                        <div class="tool-description">
+                            Retrieve authorized information for a specific
+                            NyayaVault case.
+                        </div>
+
+                        <div class="tool-parameters">
+                            <span class="parameter">case_id: integer</span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="card tool-card">
+
+                        <div class="tool-top">
+
+                            <div class="tool-name">
+                                get_cases_count
+                            </div>
+
+                            <div class="tool-tag">
+                                READ
+                            </div>
+
+                        </div>
+
+                        <div class="tool-description">
+                            Return the number of cases accessible through
+                            the authenticated MCP identity.
+                        </div>
+
+                        <div class="tool-parameters">
+                            <span class="parameter">none</span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="card tool-card">
+
+                        <div class="tool-top">
+
+                            <div class="tool-name">
+                                search_documents
+                            </div>
+
+                            <div class="tool-tag">
+                                READ
+                            </div>
+
+                        </div>
+
+                        <div class="tool-description">
+                            Search authorized legal and investigation
+                            documents using metadata and extracted text.
+                        </div>
+
+                        <div class="tool-parameters">
+                            <span class="parameter">query: string</span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="card tool-card">
+
+                        <div class="tool-top">
+
+                            <div class="tool-name">
+                                get_document
+                            </div>
+
+                            <div class="tool-tag">
+                                READ
+                            </div>
+
+                        </div>
+
+                        <div class="tool-description">
+                            Retrieve metadata and authorized information
+                            for a specific document.
+                        </div>
+
+                        <div class="tool-parameters">
+                            <span class="parameter">document_id: integer</span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="card tool-card">
+
+                        <div class="tool-top">
+
+                            <div class="tool-name">
+                                get_case_documents
+                            </div>
+
+                            <div class="tool-tag">
+                                READ
+                            </div>
+
+                        </div>
+
+                        <div class="tool-description">
+                            List documents associated with an authorized
+                            case and return relevant document metadata.
+                        </div>
+
+                        <div class="tool-parameters">
+                            <span class="parameter">case_id: integer</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- PROMPTS -->
+
+            <section class="section" id="prompts">
+
+                <div class="section-header">
+
+                    <div class="section-title">
+                        MCP Prompts
+                    </div>
+
+                    <div class="section-description">
+                        Reusable AI workflows for legal investigation analysis
+                    </div>
+
+                </div>
+
+
+                <div class="prompts-grid">
+
+                    <div class="card prompt-card">
+
+                        <div class="prompt-name">
+                            summarize_case
+                        </div>
+
+                        <div class="prompt-description">
+                            Generates a structured case summary from
+                            authorized case information, focusing on
+                            facts, parties, events, evidence, and status.
+                        </div>
+
+                    </div>
+
+
+                    <div class="card prompt-card">
+
+                        <div class="prompt-name">
+                            analyze_case
+                        </div>
+
+                        <div class="prompt-description">
+                            Provides a structured analytical view of
+                            the available case information while keeping
+                            conclusions tied to supplied evidence.
+                        </div>
+
+                    </div>
+
+
+                    <div class="card prompt-card">
+
+                        <div class="prompt-name">
+                            review_evidence
+                        </div>
+
+                        <div class="prompt-description">
+                            Reviews supplied evidence information and
+                            identifies relevant observations, missing
+                            information, and areas requiring verification.
+                        </div>
+
+                    </div>
+
+
+                    <div class="card prompt-card">
+
+                        <div class="prompt-name">
+                            find_contradictions
+                        </div>
+
+                        <div class="prompt-description">
+                            Compares supplied case information to identify
+                            conflicting statements, dates, facts, or
+                            evidence requiring further investigation.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ARCHITECTURE -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-title">
+                        Architecture
+                    </div>
+
+                    <div class="section-description">
+                        How AI clients interact with NyayaVault
+                    </div>
+
+                </div>
+
+
+                <div class="card architecture">
+
+                    <div class="architecture-flow">
+
+                        <div class="arch-node">
+
+                            <div class="arch-node-title">
+                                AI Client
+                            </div>
+
+                            <div class="arch-node-text">
+                                LLM / MCP Client
+                            </div>
+
+                        </div>
+
+
+                        <div class="arrow">
+                            →
+                        </div>
+
+
+                        <div class="arch-node primary">
+
+                            <div class="arch-node-title">
+                                NyayaVault MCP
+                            </div>
+
+                            <div class="arch-node-text">
+                                FastMCP Gateway
+                            </div>
+
+                        </div>
+
+
+                        <div class="arrow">
+                            →
+                        </div>
+
+
+                        <div class="arch-node">
+
+                            <div class="arch-node-title">
+                                Django
+                            </div>
+
+                            <div class="arch-node-text">
+                                Authorization + Business Logic
+                            </div>
+
+                        </div>
+
+
+                        <div class="arrow">
+                            →
+                        </div>
+
+
+                        <div class="arch-node">
+
+                            <div class="arch-node-title">
+                                PostgreSQL
+                            </div>
+
+                            <div class="arch-node-text">
+                                Cases + Documents
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- CONNECTION -->
+
+            <section class="section" id="connection">
+
+                <div class="section-header">
+
+                    <div class="section-title">
+                        Client Connection
+                    </div>
+
+                    <div class="section-description">
+                        Example FastMCP client connection
+                    </div>
+
+                </div>
+
+
+                <div class="card code-card">
+
+                    <div class="code-header">
+
+                        <div class="code-title">
+                            Python
+                        </div>
+
+                        <button
+                            class="copy-button"
+                            onclick="copyCode()"
+                        >
+                            Copy
+                        </button>
+
+                    </div>
+
+
+                    <pre id="connection-code"><code>from fastmcp import Client
+
+async with Client(
+    "https://your-domain.com/mcp",
+    auth="YOUR_MCP_TOKEN"
+) as client:
+
+    tools = await client.list_tools()
+
+    result = await client.call_tool(
+        "search_cases",
+        {
+            "query": "cybercrime"
+        }
+    )
+
+    print(result)</code></pre>
+
+                </div>
+
+            </section>
+
+
+            <!-- PRODUCTION NOTES -->
+
+            <section class="section">
+
+                <div class="section-header">
+
+                    <div class="section-title">
+                        Security Model
+                    </div>
+
+                    <div class="section-description">
+                        Important security principles for the MCP gateway
+                    </div>
+
+                </div>
+
+
+                <div class="card security-card">
+
+                    <div class="security-item">
+                        <span class="check">01</span>
+                        <span>
+                            MCP clients must authenticate before accessing
+                            protected tools.
+                        </span>
+                    </div>
+
+                    <div class="security-item">
+                        <span class="check">02</span>
+                        <span>
+                            Tool access should be restricted according to
+                            the authenticated NyayaVault user's role.
+                        </span>
+                    </div>
+
+                    <div class="security-item">
+                        <span class="check">03</span>
+                        <span>
+                            Case and document authorization must be checked
+                            before returning confidential information.
+                        </span>
+                    </div>
+
+                    <div class="security-item">
+                        <span class="check">04</span>
+                        <span>
+                            MCP credentials must never be hard-coded or
+                            committed to Git.
+                        </span>
+                    </div>
+
+                    <div class="security-item">
+                        <span class="check">05</span>
+                        <span>
+                            Sensitive case information should not be written
+                            to application logs.
+                        </span>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <footer class="footer">
+
+                NyayaVault · Secure Legal Document Management · MCP Gateway
+
+            </footer>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script>
+
+    function copyCode() {
+
+        const code =
+            document.getElementById("connection-code")
+            .innerText;
+
+        navigator.clipboard.writeText(code);
+
+        const button =
+            document.querySelector(".copy-button");
+
+        const original =
+            button.innerText;
+
+        button.innerText = "Copied!";
+
+        setTimeout(() => {
+            button.innerText = original;
+        }, 1500);
+    }
+
+
+    /* Smooth navigation */
+
+    document.querySelectorAll(".nav-item").forEach(item => {
+
+        item.addEventListener("click", function () {
+
+            document.querySelectorAll(".nav-item")
+                .forEach(nav => nav.classList.remove("active"));
+
+            this.classList.add("active");
+
+        });
+
+    });
+
+</script>
+
+</body>
+</html>
