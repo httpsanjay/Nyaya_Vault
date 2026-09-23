@@ -29,6 +29,12 @@ urlpatterns = [
     ),
 
     path(
+        "<int:pk>/ask/",
+        views.case_ask,
+        name="case_ask"
+    ),
+
+    path(
         "<int:pk>/",
         views.case_detail,
         name="case_detail"

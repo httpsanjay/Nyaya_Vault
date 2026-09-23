@@ -1,11 +1,14 @@
 import io
 import zipfile
+from unittest.mock import patch
 
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from cryptography.hazmat.primitives import serialization
+
+from cases.rag import ask_case
 
 from accounts.models import User
 from .models import (
@@ -460,3 +463,171 @@ class UnifiedSearchTests(TestCase):
 			self.client.get(reverse("search"), {"q": "CASE/001"}),
 			"Unreadable Evidence",
 		)
+
+
+@override_settings(SECURE_SSL_REDIRECT=False)
+class RAGTests(TestCase):
+
+	def setUp(self):
+		self.station = PoliceStation.objects.create(name="RAG Station", code="RAG")
+		self.other_station = PoliceStation.objects.create(name="Other Station", code="OTH")
+		self.user = User.objects.create_user(
+			username="rag-user", password="password", id_number="RAG-USER",
+			role="SHO", police_station=self.station,
+		)
+		self.other_user = User.objects.create_user(
+			username="other-user", password="password", id_number="OTHER-USER",
+			role="SHO", police_station=self.other_station,
+		)
+		self.case = Case.objects.create(
+			case_number="CASE-RAG-001", title="Evidence Review",
+			case_type="THEFT", created_by=self.user, police_station=self.station,
+		)
+		self.other_case = Case.objects.create(
+			case_number="CASE-RAG-002", title="Private Review",
+			case_type="THEFT", created_by=self.other_user, police_station=self.other_station,
+		)
+		self.document = Document.objects.create(
+			case=self.case, name="Witness Statement", document_type="WITNESS_STATEMENT",
+			uploaded_by=self.user,
+		)
+		self.other_document = Document.objects.create(
+			case=self.other_case, name="Confidential Statement", document_type="WITNESS_STATEMENT",
+			uploaded_by=self.other_user,
+		)
+		self.version = DocumentVersion.objects.create(
+			document=self.document, version_number=1,
+			file=SimpleUploadedFile("witness.txt", b"witness statement"),
+			extracted_text="The witness saw the accused near the warehouse at 11:00 PM.",
+			uploaded_by=self.user,
+		)
+		self.other_version = DocumentVersion.objects.create(
+			document=self.other_document, version_number=1,
+			file=SimpleUploadedFile("private.txt", b"private statement"),
+			extracted_text="The accused was not present in the warehouse. This is unrelated evidence.",
+			uploaded_by=self.other_user,
+		)
+
+	def test_authorized_user_can_ask_questions_about_an_accessible_case(self):
+		with patch("cases.rag.generate_rag_answer", return_value={
+			"answer": "The witness statement says the accused was near the warehouse.",
+			"sources": [{"document_name": "Witness Statement", "document_id": self.document.pk, "document_version_id": self.version.pk}],
+			"provider": "mock",
+			"model": "mock-model",
+			"grounded": True,
+		}):
+			result = ask_case(self.user, self.case.pk, "Where was the accused seen?")
+		self.assertTrue(result["success"])
+		self.assertEqual(result["case"]["case_id"], self.case.pk)
+		self.assertEqual(result["sources"][0]["document_name"], "Witness Statement")
+
+	def test_unauthorized_user_cannot_retrieve_case_information(self):
+		result = ask_case(self.other_user, self.case.pk, "Where was the accused seen?")
+		self.assertFalse(result["success"])
+		self.assertIn("not authorized", str(result["error"]).lower())
+
+	def test_semantic_search_is_restricted_to_authorized_data(self):
+		with patch("cases.rag.unified_search", return_value=[{
+			"case": self.case,
+			"documents": [{
+				"document": self.document,
+				"score": 0.9,
+				"matches": [{"text": "The witness saw the accused near the warehouse.", "score": 0.9, "version_id": self.version.pk}],
+				"version": self.version,
+			}, {
+				"document": self.other_document,
+				"score": 0.95,
+				"matches": [{"text": "The accused was not present in the warehouse.", "score": 0.95, "version_id": self.other_version.pk}],
+				"version": self.other_version,
+			}],
+		}]):
+			with patch("cases.rag.generate_rag_answer", return_value={
+				"answer": "The witness saw the accused nearby.",
+				"sources": [],
+				"provider": "mock",
+				"model": "mock-model",
+				"grounded": True,
+			}):
+				result = ask_case(self.user, self.case.pk, "Where was the accused seen?")
+		self.assertEqual(len(result["retrieved_chunks"]), 1)
+		self.assertEqual(result["retrieved_chunks"][0]["document_id"], self.document.pk)
+		self.assertNotIn(self.other_document.pk, {chunk["document_id"] for chunk in result["retrieved_chunks"]})
+
+	def test_no_result_search_is_handled_correctly(self):
+		with patch("cases.rag.unified_search", return_value=[]):
+			result = ask_case(self.user, self.case.pk, "completely unrelated legal phrase that should not match")
+		self.assertFalse(result["success"])
+		self.assertIn("available documents do not contain enough information", result["error"].lower())
+
+	def test_insufficient_context_is_handled_correctly(self):
+		self.version.extracted_text = ""
+		self.version.save(update_fields=["extracted_text"])
+		with patch("cases.rag.unified_search", return_value=[{
+			"case": self.case,
+			"documents": [{"document": self.document, "score": 0.7, "matches": [], "version": None}],
+		}]):
+			result = ask_case(self.user, self.case.pk, "What happened?")
+		self.assertFalse(result["success"])
+		self.assertIn("insufficient", result["error"].lower())
+
+	def test_source_references_correspond_to_actual_retrieved_documents(self):
+		with patch("cases.rag.unified_search", return_value=[{
+			"case": self.case,
+			"documents": [{
+				"document": self.document,
+				"score": 0.85,
+				"matches": [{"text": "The witness saw the accused near the warehouse.", "score": 0.85, "version_id": self.version.pk, "chunk_index": 3}],
+				"version": self.version,
+			}],
+		}]):
+			with patch("cases.rag.generate_rag_answer", return_value={
+				"answer": "The witness saw the accused near the warehouse.",
+				"sources": [{"document_id": self.document.pk, "document_name": "Witness Statement", "document_version_id": self.version.pk, "chunk_id": 3}],
+				"provider": "mock",
+				"model": "mock-model",
+				"grounded": True,
+			}):
+				result = ask_case(self.user, self.case.pk, "Who was near the warehouse?")
+		self.assertEqual(result["sources"][0]["document_id"], self.document.pk)
+		self.assertEqual(result["sources"][0]["chunk_id"], 3)
+
+	def test_llm_failures_are_handled_safely(self):
+		with patch("cases.rag.unified_search", return_value=[{
+			"case": self.case,
+			"documents": [{"document": self.document, "score": 0.8, "matches": [{"text": "The witness saw the accused near the warehouse.", "score": 0.8, "version_id": self.version.pk}], "version": self.version}],
+		}]):
+			with patch("cases.rag.generate_rag_answer", side_effect=RuntimeError("openai unavailable")):
+				result = ask_case(self.user, self.case.pk, "Where was the accused seen?")
+		self.assertFalse(result["success"])
+		self.assertIn("llm", str(result["error"]).lower())
+
+	def test_another_case_data_never_appears_in_context(self):
+		with patch("cases.rag.unified_search", return_value=[{
+			"case": self.case,
+			"documents": [{"document": self.document, "score": 0.9, "matches": [{"text": "The witness saw the accused near the warehouse.", "score": 0.9, "version_id": self.version.pk}], "version": self.version}],
+		}, {
+			"case": self.other_case,
+			"documents": [{"document": self.other_document, "score": 0.9, "matches": [{"text": "The accused was not present in the warehouse.", "score": 0.9, "version_id": self.other_version.pk}], "version": self.other_version}],
+		}]):
+			with patch("cases.rag.generate_rag_answer", return_value={
+				"answer": "Available documents support the warehouse sighting.",
+				"sources": [{"document_id": self.document.pk, "document_name": "Witness Statement", "document_version_id": self.version.pk}],
+				"provider": "mock",
+				"model": "mock-model",
+				"grounded": True,
+			}):
+				result = ask_case(self.user, self.case.pk, "Where was the accused seen?")
+		for chunk in result["retrieved_chunks"]:
+			self.assertNotEqual(chunk["document_id"], self.other_document.pk)
+		self.assertEqual(result["case"]["case_id"], self.case.pk)
+
+	def test_mcp_rag_tool_enforces_authorization(self):
+		from mcp_gateway.main import ask_case_question
+		self.client.force_login(self.user)
+		result = self.client.post("/cases/" + str(self.case.pk) + "/ask/", {"question": "Where was the accused seen?"}, follow=True)
+		self.assertEqual(result.status_code, 200)
+		self.assertTrue(result.json()["success"])
+		self.assertEqual(ask_case_question.__name__, "ask_case_question")
+		self.client.force_login(self.other_user)
+		forbidden = self.client.post("/cases/" + str(self.case.pk) + "/ask/", {"question": "Where was the accused seen?"}, follow=True)
+		self.assertEqual(forbidden.status_code, 403)

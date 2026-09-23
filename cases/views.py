@@ -1,5 +1,6 @@
 import hashlib
 import io
+import json
 import logging
 import mimetypes
 import os
@@ -51,6 +52,7 @@ from .permissions import (
     can_download_document_version,
 )
 from .search import serialize_search_results, unified_search
+from .rag import ask_case as rag_ask_case
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +80,37 @@ def search_api(request):
             unified_search(query, request.user)
         ),
     })
+
+
+@login_required
+def case_ask(request, pk):
+    case = get_object_or_404(Case, pk=pk)
+    if not can_access_case(request.user, case):
+        return JsonResponse({
+            "success": False,
+            "error": "You are not authorized to access this case.",
+        }, status=403)
+
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            payload = json.loads(request.body.decode("utf-8") or "{}")
+        except (TypeError, ValueError):
+            payload = {}
+        question = str(payload.get("question", "") or "").strip()
+    else:
+        question = str(request.POST.get("question", "") or "").strip()
+
+    if not question:
+        return JsonResponse({
+            "success": False,
+            "error": "Question is required.",
+        }, status=400)
+
+    result = rag_ask_case(request.user, pk, question)
+    status = 200 if result.get("success") else 400
+    if not result.get("success") and "not authorized" in str(result.get("error", "")).lower():
+        status = 403
+    return JsonResponse(result, status=status)
 
 
 def queue_document_ocr(document_version_id):
