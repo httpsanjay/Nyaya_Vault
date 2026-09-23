@@ -1,245 +1,701 @@
 # NyayaVault
 
-NyayaVault is a Django-based secure digital document management system for legal and investigation documents. It organizes documents around cases and provides controlled access, version tracking, review, signing, search, and audit records to help users manage case information consistently.
+### Secure Digital Document Management System for Legal & Investigation Documents
+
+[![Python](https://img.shields.io/badge/Python-3.14-3776AB?style=for-the-badge\&logo=python\&logoColor=white)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-6.x-092E20?style=for-the-badge\&logo=django\&logoColor=white)](https://www.djangoproject.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169E1?style=for-the-badge\&logo=postgresql\&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-Queue%20%26%20Cache-DC382D?style=for-the-badge\&logo=redis\&logoColor=white)](https://redis.io/)
+[![REST API](https://img.shields.io/badge/API-Django%20REST%20Framework-A30000?style=for-the-badge)](https://www.django-rest-framework.org/)
+[![License](https://img.shields.io/badge/License-Educational-blue?style=for-the-badge)](#license)
+
+**NyayaVault** is a secure web-based document management system designed for storing, managing, reviewing, and tracking legal and investigation documents.
+
+The system connects documents with cases and authorized officers while maintaining document versions, audit records, file integrity, and digital signatures.
+
+---
 
 ## Overview
 
-Legal and investigation work often involves many files, versions, reviewers, and participating organizations. Keeping those records organized, knowing who can access them, and identifying whether a file has changed can be difficult when documents are managed separately.
+Legal and investigation teams handle documents such as:
 
-NyayaVault groups documents under a case. Users can create cases, upload document versions, review their status, search available case information, and share selected versions with controlled permissions. Role-based access limits case visibility according to the user's role, police station, assignment, and active shares.
+* FIRs
+* Investigation reports
+* Witness statements
+* Charge sheets
+* Evidence records
+* Forensic reports
+* Case-related documents
 
-Each document version can store extracted text and a SHA-256 file hash. Review and signing data records important actions, while audit logs record events such as uploads, approvals, signatures, verification, sharing, and downloads.
+Managing these documents manually can make it difficult to track versions, verify file integrity, control access, and identify who approved a document.
+
+**NyayaVault** provides a centralized system where documents are linked to cases and access is controlled based on the user's role and permissions.
+
+---
 
 ## Key Features
 
-- Case management with case numbers, types, descriptions, assignments, and status values
-- Role-based access control for administrators, police roles, lawyers, and court officials
-- Case-linked document and document-version management
-- Document versioning without silently replacing earlier versions
-- Document status and review workflow: draft, pending review, rejected, approved, and signed
-- OCR/text extraction for supported PDF and image files through a background task
-- SHA-256 file hashing when a document version is saved
-- RSA digital signatures using an SHO-specific signing key
-- Audit logging for important case and document actions, including the request IP address when available
-- Authenticated document viewing and downloads with access checks
-- Search across authorized cases, document metadata, and extracted text
-- Controlled document sharing with view/download permissions, optional expiry, and revocation
+### 🔐 Role-Based Access Control
 
-The repository does not currently include RAG, LLM, MCP, or vector-database integration as a required feature. The search module can optionally use `sentence-transformers` if that package and model are installed, but it is not included in the current `requirements.txt`.
+Different users have different responsibilities within the system.
 
-## User Roles
+Supported roles include:
 
-The application defines these roles:
+* **Investigation Officer (IO)**
+* **Station House Officer (SHO)**
+* **Forensic Officer**
+* **Lawyer**
+* **Court**
 
-- **IO (Investigating Officer):** Creates cases and works with cases created by, assigned to, or involving the officer.
-- **SHO (Station House Officer):** Oversees cases associated with the SHO's police station and can use the digital-signing workflow.
-- **Forensic Officer:** Works with cases where the officer is assigned or listed as a collaborating officer.
-- **Lawyer:** Can receive documents through an active share addressed to that lawyer.
-- **Court:** Can receive documents through an active share addressed to that court official.
+Access to cases and documents can be restricted according to the user's role and assigned permissions.
 
-The system also defines **System Administrator** and Django superuser access. Access depends on role, station, assignment, and active shares.
+---
 
-## Document Workflow
+### 📁 Case-Based Document Management
 
-1. An authorized IO creates or selects a case.
-2. A document is created and associated with the case.
-3. A document version is uploaded and tracked with its version number.
-4. OCR/text extraction may run as a Celery background task for supported PDF and image files.
-5. The version can move through draft, review, rejection, and approval states.
-6. An authorized SHO can enable digital signing and sign an approved document version.
-7. The file hash, signature information, and audit records can be used to check integrity and review important actions.
-8. Approved or signed documents can be viewed, downloaded, or shared when the user's permissions allow it.
+Documents are organized around cases instead of being stored as isolated files.
 
-## Security and Integrity
+Each case can contain multiple documents and document versions.
 
-### Authentication and Authorization
+Example:
 
-Users authenticate through Django's session-based authentication. Passwords are handled through Django's authentication system. Access checks use the user's role, police station, case ownership or assignment, and active document shares. Shared documents can be limited to viewing or downloading and can have an expiry time or be revoked.
+```text
+Case
+ ├── FIR
+ ├── Investigation Report
+ ├── Witness Statement
+ ├── Evidence Document
+ ├── Forensic Report
+ └── Charge Sheet
+```
 
-Their effectiveness depends on correct deployment configuration, protected secrets, and appropriate account administration.
+This makes it easier to find and manage all documents related to a particular investigation.
 
-### File Integrity
+---
 
-When a file is saved, NyayaVault calculates a SHA-256 hash from its contents and stores the hexadecimal result with the document version. If the file contents change, the calculated hash changes. Comparing hashes can therefore help detect an unauthorized or unexpected modification.
+### 📝 Document Versioning
 
-### Digital Signatures
+NyayaVault keeps track of different versions of documents.
 
-Digital signing uses RSA through the Python `cryptography` package. The signature payload includes the document ID, version number, file hash, and SHO user ID. The payload is signed with the SHO's encrypted private key and can be verified with the corresponding public key.
+Instead of replacing the original document, a new version can be created.
 
-A digital signature helps verify the signed content and the corresponding signing key. It does not provide confidentiality or encrypt the document contents.
+This helps maintain a history of document changes and supports investigation traceability.
 
-### Transport Security
+---
 
-For non-debug deployments, the settings enable HTTPS redirection and secure session/CSRF cookies, and Render is configured with an HTTPS hostname. HTTPS/TLS protects data while it is being transmitted. Uploaded documents are stored using Django's file storage configuration; the project does not document or implement encryption at rest for those files.
+### 🔏 Digital Signatures
 
-## Search and OCR
+NyayaVault supports digital signing of approved documents.
 
-The search page and JSON search endpoint search authorized case and document information. Search can match case metadata, document metadata, and extracted document text. The implementation includes keyword matching and an optional semantic matching path that uses `sentence-transformers` when available; otherwise it falls back to term-overlap scoring.
+The current signing workflow is designed around an **IO → SHO** approval process.
 
-OCR/text extraction is queued through Celery and currently uses `pytesseract`, `pdf2image`, and Pillow. PDF pages and image files are processed when the required local OCR and PDF-rendering dependencies are available. OCR accuracy depends on document quality and format. Some scanned images or unsupported files may produce no usable extracted text, which limits text-based search.
+```text
+Investigation Officer
+        │
+        │ Upload Document
+        ▼
+     Document
+        │
+        ▼
+   SHO Review
+        │
+        │ Approve
+        ▼
+   Digital Signature
+        │
+        ▼
+   Signed Document
+```
+
+The system uses:
+
+* **RSA 4096-bit keys** for digital signatures
+* **SHA-256** for document hashing
+
+The hash helps detect changes to the file, while the digital signature provides cryptographic evidence that the document was signed using the corresponding signing key.
+
+---
+
+### 🧾 File Integrity
+
+Each document version can have a cryptographic hash.
+
+Example:
+
+```text
+Original File
+     │
+     ▼
+ SHA-256 Hash
+     │
+     ▼
+Stored with Document Version
+```
+
+If the file is modified later, its calculated hash will differ from the stored hash.
+
+This provides a way to detect byte-level changes to a document.
+
+---
+
+### 🔍 Document Search
+
+NyayaVault includes document and case search functionality.
+
+The system can search using information such as:
+
+* Case ID
+* Document name
+* Document description
+* Extracted document text
+* Relevant keywords
+
+Semantic search functionality can also use document embeddings to retrieve relevant content based on meaning rather than only exact keyword matches.
+
+---
+
+### 📄 OCR Support
+
+Scanned documents and images may not contain selectable text.
+
+NyayaVault can process supported documents using OCR to extract text.
+
+The extracted text can then be used for:
+
+* Search
+* Document analysis
+* Future semantic retrieval
+* AI-assisted features
+
+OCR processing is handled asynchronously using a task queue.
+
+---
+
+### ⚡ Background Processing
+
+Redis is used to support background processing for tasks such as document text extraction.
+
+```text
+User Upload
+     │
+     ▼
+Django
+     │
+     ▼
+Task Queue
+     │
+     ▼
+Redis
+     │
+     ▼
+Background Worker
+     │
+     ▼
+OCR / Text Extraction
+```
+
+This prevents heavy document-processing operations from blocking the main web request.
+
+---
+
+### 📋 Audit Trail
+
+Important actions can be recorded in the system to provide a history of activity.
+
+Examples include:
+
+* Document uploads
+* Document changes
+* Reviews
+* Approvals
+* Digital signing
+* Access-related actions
+
+The audit trail helps provide visibility into how documents are handled.
+
+---
 
 ## Technology Stack
 
-| Layer | Technology |
-|------|------------|
-| Backend | Django 6.1 |
-| API/JSON layer | Django REST Framework is installed; the application also exposes a Django JSON search endpoint |
-| Database | SQLite by default in the current settings; PostgreSQL driver and a Render PostgreSQL resource are configured for deployment work |
-| Cache/Queue | Redis |
-| Background Tasks | Celery |
-| Document Processing | Tesseract OCR, `pdf2image`, Pillow, and text extraction |
-| Digital Signature | Python `cryptography` with RSA |
-| Hashing | SHA-256 |
-| Frontend | Django Templates, HTML, CSS, and JavaScript |
-| Static Files | WhiteNoise in non-debug deployments |
-| Deployment | Render configuration in `render.yaml` |
+| Technology                  | Purpose                   |
+| --------------------------- | ------------------------- |
+| **Python**                  | Backend programming       |
+| **Django**                  | Web application framework |
+| **Django REST Framework**   | REST API                  |
+| **PostgreSQL**              | Database                  |
+| **Celery**                  | Background processing     |
+| **HTML / CSS / JavaScript** | Frontend                  |
+| **SHA-256**                 | File integrity hashing    |
+| **RSA 4096**                | Digital signatures        |
+| **OCR**                     | Text extraction           |
+| **Sentence Transformers**   | Semantic embeddings       |
+| **FastMCP**                 | MCP Integration           |
+| **Git**                     | Version control           |
+
+---
+
+## System Architecture
+
+```text
+                         ┌──────────────────────┐
+                         │       Browser        │
+                         │   Web Application     │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │       Django         │
+                         │    Application       │
+                         └───────┬───────┬──────┘
+                                 │       │
+                 ┌───────────────┘       └───────────────┐
+                 ▼                                       ▼
+       ┌──────────────────┐                    ┌──────────────────┐
+       │   PostgreSQL     │                    │      Redis       │
+       │     Database     │                    │ Queue / Cache    │
+       └──────────────────┘                    └────────┬─────────┘
+                                                        │
+                                                        ▼
+                                              ┌──────────────────┐
+                                              │ Background Tasks │
+                                              │ OCR / Processing │
+                                              └──────────────────┘
+
+                         ┌──────────────────────┐
+                         │ Document Processing  │
+                         │ Hash / Signature /   │
+                         │ Text Extraction      │
+                         └──────────────────────┘
+```
+
+---
+
+## Document Security Model
+
+NyayaVault uses multiple layers to protect document integrity.
+
+### 1. Access Control
+
+Users are given permissions based on their roles and assignments.
+
+### 2. File Hashing
+
+SHA-256 is used to generate a cryptographic fingerprint of a document.
+
+### 3. Digital Signature
+
+Approved documents can be digitally signed using RSA-based cryptography.
+
+### 4. Audit Records
+
+Important document operations can be recorded for traceability.
+
+### 5. HTTPS
+
+When deployed with HTTPS, TLS protects communication between the user's browser and the application during transmission.
+
+> Digital signatures and hashing help verify document integrity and authenticity. HTTPS protects the communication channel while data is being transmitted.
+
+---
+
+## Digital Signature Workflow
+
+The signing process is designed to prevent unauthorized signing.
+
+```text
+IO uploads document
+        │
+        ▼
+Document stored
+        │
+        ▼
+SHO reviews document
+        │
+        ├── Reject ──► Document returned for changes
+        │
+        ▼
+     Approve
+        │
+        ▼
+SHO signs document
+        │
+        ▼
+SHA-256 hash + RSA signature
+        │
+        ▼
+Signed document version
+```
+
+The signature is associated with the approved document version.
+
+---
 
 ## Project Structure
 
 ```text
 nyaya_vault/
+│
 ├── accounts/
 │   ├── models.py
 │   ├── views.py
-│   ├── forms.py
-│   └── templates/accounts/
+│   ├── urls.py
+│   └── templates/
+│
 ├── cases/
 │   ├── models.py
 │   ├── views.py
-│   ├── permissions.py
 │   ├── search.py
-│   ├── ocr.py
-│   ├── tasks.py
-│   └── management/commands/
+│   └── urls.py
+│
 ├── audit/
 │   ├── models.py
-│   ├── views.py
-│   └── utils.py
+│   └── ...
+│
 ├── nyaya_vault/
 │   ├── settings.py
 │   ├── urls.py
-│   ├── asgi.py
-│   └── wsgi.py
+│   └── ...
+│
 ├── static/
+│   ├── css/
+│   ├── js/
+│   └── images/
+│
 ├── templates/
-├── media/
+│
 ├── manage.py
 ├── requirements.txt
-├── build.sh
-├── render.yaml
 └── README.md
 ```
 
-- `accounts` contains the custom user model, authentication, dashboard, and account routes.
-- `cases` contains case, document, access, search, OCR, sharing, and signing workflows.
-- `audit` contains the audit-log model and view.
-- `nyaya_vault` contains project settings and root URLs.
+---
 
 ## Installation
 
-### Windows PowerShell
+### 1. Clone the Repository
 
-```powershell
-git clone <repository-url>
-cd sih
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
+```bash
+git clone https://github.com/httpsanjay/nyaya-vault.git
+cd nyaya-vault
+```
+
+> Replace the repository URL with the actual repository URL if the repository name is different.
+
+### 2. Create a Virtual Environment
+
+Windows:
+
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+Linux / macOS:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-Create a `.env` file in the project root using the placeholders in [Environment Variables](#environment-variables). Do not commit this file.
+### 4. Configure Environment Variables
 
-The current settings use SQLite by default. For PostgreSQL, configure the project settings and connection details before migrations. Redis is required for the Celery OCR queue, and Tesseract plus the PDF rendering tools used by `pdf2image` are required for OCR.
+Create a `.env` file.
 
-Run the database setup and development server:
+Example:
 
-```powershell
+```env
+SECRET_KEY=DJANGO_SECRET_KEY
+DEBUG=True or False
+ALLOWED_HOSTS=localhost,127.0.0.1,*.localhost
+SESSION_COOKIE_AGE=7200
+SESSION_EXPIRE_AT_BROWSER_CLOSE=True or False
+SIGNING_KEY_ENCRYPTION_PASSWORD=test-signing-password
+MCP_AUTH_TOKEN=MCP_TOKEN
+MCP_HOST=0.0.0.0
+MCP_PORT=8001
+```
+
+### 5. Run Migrations
+
+```bash
 python manage.py migrate
-python manage.py seed_police_stations
+```
+
+### 6. Create an Administrator
+
+```bash
 python manage.py createsuperuser
+```
+
+### 7. Start the Development Server
+
+```bash
 python manage.py runserver
 ```
 
-Start Redis separately when needed. Start a Celery worker from the project root in another terminal:
+The application will normally be available at:
 
-```powershell
-celery -A nyaya_vault worker --loglevel=info
+```text
+http://127.0.0.1:8000/
 ```
 
-On Linux/macOS, activate the environment with `source .venv/bin/activate` and use the equivalent commands. The repository's `build.sh` installs dependencies, collects static files, runs migrations, and seeds police stations for deployment.
-
-## Environment Variables
-
-Example `.env` values:
-
-```dotenv
-SECRET_KEY=your-secret-key
-DEBUG=False
-SIGNING_KEY_ENCRYPTION_PASSWORD=your-password
-CELERY_BROKER_URL=redis://127.0.0.1:6379/0
-CELERY_RESULT_BACKEND=redis://127.0.0.1:6379/0
-MEDIA_ROOT=media
-SESSION_COOKIE_AGE=1209600
-SESSION_EXPIRE_AT_BROWSER_CLOSE=False
-```
-
-`SECRET_KEY` and `SIGNING_KEY_ENCRYPTION_PASSWORD` are required by the application. Render also defines `DATABASE_URL` and generates `SECRET_KEY`, but the current settings file uses SQLite unless database configuration is updated. Never commit real credentials, database URLs, API keys, passwords, or private signing keys to GitHub.
+---
 
 ## API
 
-The project includes Django REST Framework and a user serializer, but it does not currently expose a broad DRF viewset or router-based API.
+NyayaVault uses Django REST Framework for API-based operations.
 
-The implemented JSON search endpoint is:
+The API can be used for application features such as:
+
+* Authentication
+* Case management
+* Document management
+* Document versions
+* Search
+* Case-related operations
+
+API documentation can be exposed through the project's configured API documentation system.
+
+---
+
+## AI and Semantic Search
+
+NyayaVault is designed to support AI-assisted document retrieval and analysis.
+
+The semantic search pipeline can use:
 
 ```text
-GET /cases/api/search/?q=<search-term>
+Document
+    │
+    ▼
+Text Extraction
+    │
+    ▼
+Text Chunking
+    │
+    ▼
+Embeddings
+    │
+    ▼
+Vector Search
+    │
+    ▼
+Relevant Documents
 ```
 
-It requires authentication and returns the query plus authorized, case-grouped search results. The main application is otherwise served through Django template views. Representative web routes include `/login/`, `/register/`, `/dashboard/`, `/cases/`, `/cases/search/`, and `/audit/`.
+A future RAG architecture can build on this retrieval layer.
 
-## Deployment
+### Planned AI Capabilities
 
-`render.yaml` defines a Render Python web service with `build.sh`, an ASGI Gunicorn start command, a free Render PostgreSQL resource, and a `SIGNING_KEY_ENCRYPTION_PASSWORD` value that must be supplied separately. The build script installs dependencies, collects static files, applies migrations, and seeds police stations.
+* Case summarization
+* Relevant document retrieval
+* Question answering over authorized case documents
+* Identification of missing information
+* Contradiction detection
+* Investigation document analysis
 
-Before deployment, configure PostgreSQL, provide the required environment variables, and ensure Redis is available for Celery OCR. Static files are collected during the build and served through WhiteNoise. The current Render file defines the web service but not a Celery worker service.
+AI features should only operate on information that the authenticated user is authorized to access.
 
-## Limitations
+---
 
-- OCR accuracy depends on document quality, language, layout, and supported format.
-- Some scanned or unsupported documents may not produce extractable text.
-- Search results are limited when a document has no extracted text.
-- Optional semantic search depends on an extra package and model that are not in the current requirements file.
-- Security depends on correct deployment configuration, secret management, user administration, and access-permission setup.
-- Uploaded files are not documented as encrypted at rest.
-- The default local database is SQLite, and the current settings require configuration changes to use the PostgreSQL resource declared for Render.
-- Free hosting services may have resource, storage, worker, and availability limitations.
+## MCP Integration
+
+NyayaVault is also being extended with **Model Context Protocol (MCP)** integration.
+
+The goal is to provide controlled access to application capabilities through defined MCP tools and prompts.
+
+Possible operations include:
+
+```text
+User
+ │
+ ▼
+AI Application
+ │
+ ▼
+MCP
+ │
+ ├── Case Search
+ ├── Document Search
+ ├── Case Information
+ └── Authorized Retrieval
+        │
+        ▼
+    NyayaVault
+```
+
+MCP access must respect the application's existing authentication and authorization rules.
+
+---
+
+## Security Considerations
+
+This project is designed as a security-focused academic and development project.
+
+Important security areas include:
+
+* Role-based access control
+* Authentication
+* Authorization
+* File integrity verification
+* Digital signatures
+* Secure secret management
+* HTTPS/TLS in deployment
+* Audit logging
+* Controlled document access
+* Protection of private signing keys
+
+For a real production legal system, additional security controls, compliance requirements, infrastructure hardening, key management, monitoring, backups, disaster recovery, and formal security testing would be required.
+
+---
+
+## Use Cases
+
+### Police / Investigation
+
+Investigating officers can manage documents related to assigned cases.
+
+### Senior Officers
+
+SHOs can review and approve documents submitted by authorized officers.
+
+### Forensic Teams
+
+Forensic reports and related documents can be associated with cases.
+
+### Legal Teams
+
+Authorized lawyers can access documents shared with them.
+
+### Courts
+
+Authorized court users can access documents made available for the relevant case.
+
+---
+
+## SDG Alignment
+
+NyayaVault is related to:
+
+### UN Sustainable Development Goal 16
+
+**Peace, Justice and Strong Institutions**
+
+The project focuses on improving digital document management, traceability, controlled access, and information handling for legal and investigation workflows.
+
+---
 
 ## Future Improvements
 
-The following are planned or possible future improvements, not current required features:
+Planned improvements include:
 
-- RAG-based case document analysis
-- LLM-assisted case summarization
-- Contradiction and missing-information detection
-- MCP integration for controlled AI access to case information
-- Vector database integration and improved semantic search
-- Stronger document encryption at rest
-- Integration with external legal or investigation systems
-- Improved OCR for scanned documents
-- Cloud storage integration
-- Interoperability with standardized legal document formats
+* Advanced RAG pipeline
+* Vector database integration
+* MCP-based AI workflows
+* Improved OCR processing
+* AI-assisted case summaries
+* Contradiction detection
+* Advanced audit analytics
+* Cloud object storage
+* Stronger key management
+* Document encryption at rest
+* Improved interoperability
+* Security testing and penetration testing
+* Production-grade monitoring
+* Backup and disaster recovery
 
-## Security Notice
+---
 
-Store secrets in environment variables and protect private signing keys. Enable HTTPS in deployment, configure access permissions carefully, and review user roles before using the system. NyayaVault is an academic/project implementation and should be properly reviewed, tested, and hardened before use with real confidential legal records.
+## Current Status
+
+**NyayaVault is an academic project / prototype under active development.**
+
+The project demonstrates the architecture and implementation of secure digital document management concepts including:
+
+* Case management
+* Role-based access
+* Document versioning
+* OCR
+* Document hashing
+* Digital signatures
+* Audit tracking
+* Semantic search
+* Background processing
+* MCP integration
+
+It should **not** be considered a certified production system for handling real confidential legal or investigation data without additional security, compliance, and infrastructure work.
+
+---
+
+## Contributing
+
+This project is currently developed primarily as an academic project.
+
+If you want to contribute:
+
+1. Fork the repository.
+2. Create a feature branch.
+
+```bash
+git checkout -b feature/your-feature
+```
+
+3. Make your changes.
+4. Test the changes.
+5. Commit your work.
+
+```bash
+git commit -m "Add your feature"
+```
+
+6. Push the branch.
+
+```bash
+git push origin feature/your-feature
+```
+
+7. Open a Pull Request.
+
+---
 
 ## License
 
-License information has not yet been specified.
+This project is intended for **educational and academic purposes**.
+
+Add an appropriate open-source license to the repository if you decide to distribute the project under one.
+
+---
 
 ## Author
 
-Sri Sanjay K  
-B.Tech CSE Student  
+**Sri Sanjay K**
+
+B.Tech Computer Science Engineering
 CMR University
+
+**Vinutha NJ**
+
+B.Tech Computer Science Engineering
+CMR University
+
+**Yashaswini DN**
+
+B.Tech Computer Science Engineering
+CMR University
+
+---
+
+<p align="center">
+  <strong>NyayaVault</strong><br>
+  Secure. Traceable. Case-Centric.
+</p>
+
+<p align="center">
+  Built for secure digital document management in legal and investigation workflows.
+</p>
